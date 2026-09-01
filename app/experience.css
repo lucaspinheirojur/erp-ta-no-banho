@@ -1,10 +1,10 @@
 :root {
-  --brown: #4e3927;
-  --gold: #9b794c;
-  --cream: #f2ebe4;
-  --paper: #fffdfa;
-  --line: #ded2c7;
-  --green: #67725c;
+  --brown: #173b42;
+  --gold: #ef5aa5;
+  --cream: #f5fbfb;
+  --paper: #ffffff;
+  --line: #ddecf0;
+  --green: #0a9eaa;
 }
 * {
   box-sizing: border-box;
@@ -12,10 +12,6 @@
 button,
 input {
   font: inherit;
-}
-body {
-  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
-  font-weight: 400 !important;
 }
 .client-shell {
   min-height: 100vh;

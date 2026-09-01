@@ -1,5 +1,5 @@
 .client-shell{--pet-teal:#0a9eaa;--pet-teal-dark:#08747d;--pet-pink:#ef5aa5;--pet-pink-dark:#d7438d;--pet-ink:#173b42;--pet-muted:#688389;--pet-line:#ddecf0;min-height:100vh;background:#f5fbfb;color:var(--pet-ink);font-family:var(--font-geist-sans),Arial,sans-serif}
-.client-header{position:fixed;inset:0 auto 0 0;z-index:20;width:250px;height:100vh;padding:18px 20px 22px;display:flex;flex-direction:column;align-items:stretch;gap:0;background:#fff;border-right:1px solid var(--pet-line);box-shadow:none}
+.client-header{position:fixed;inset:0 auto 0 0;z-index:20;width:250px;height:100vh;padding:18px 20px 22px;display:flex;flex-direction:column;align-items:stretch;gap:0;background:#fff;border:0;border-right:1px solid var(--pet-line);box-shadow:none}
 .client-header img{width:210px;height:150px;margin:0 auto 4px;object-fit:cover;object-position:center 49%;border-radius:18px}
 .booking-brand-copy{display:flex;align-items:baseline;justify-content:center;gap:6px;margin-bottom:20px}.booking-brand-copy span{color:var(--pet-muted);font-size:10px}.booking-brand-copy b{color:var(--pet-ink);font-size:12px}
 .booking-menu-label{margin:6px 12px 9px;color:#9aa7a8;font-size:10px;font-weight:800;letter-spacing:.14em}.booking-step-nav{display:grid;gap:4px}.booking-step-nav span{min-height:43px;display:flex;align-items:center;gap:11px;padding:0 12px;border-radius:12px;color:#71868a;font-size:12px;font-weight:650}.booking-step-nav i{width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#edf6f7;color:#799095;font-style:normal;font-size:10px}.booking-step-nav span.active{background:linear-gradient(90deg,#e5f8fa,#fff0f8);color:var(--pet-teal-dark);box-shadow:inset 3px 0 var(--pet-pink)}.booking-step-nav span.active i,.booking-step-nav span.done i{background:#d9f4f6;color:var(--pet-teal-dark)}.booking-step-nav span.done{color:var(--pet-teal-dark)}
@@ -11,5 +11,29 @@
 .flow-fields input,.flow-fields select{min-height:48px;padding:11px 12px;border:1px solid #cfe5e8;border-radius:11px;background:#fbfefe;color:var(--pet-ink)}.flow-fields input:focus,.flow-fields select:focus{outline:2px solid #ef5aa536;border-color:var(--pet-pink)}
 .flow-primary{min-height:50px;border-radius:12px;background:linear-gradient(135deg,var(--pet-pink),#f177b4);color:#fff;box-shadow:0 10px 24px #ef5aa52e}.flow-primary:hover:not(:disabled){background:linear-gradient(135deg,var(--pet-pink-dark),var(--pet-pink))}.flow-primary:disabled{background:#c9d6d8;box-shadow:none}.flow-back{min-height:50px;border:1px solid #bcdcdf;border-radius:12px;color:var(--pet-teal-dark)}
 .flow-trust{max-width:980px;margin:18px auto 0;padding:16px 20px;border:1px solid var(--pet-line);border-radius:16px;background:#fff;color:var(--pet-muted)}.flow-trust>span,.booking-success>span,.card-test-heading>span{background:#dff5f6;color:var(--pet-teal-dark)}.flow-trust b{color:var(--pet-ink)}
-.booking-recap,.payment-preview,.booking-rules,.package-total,.availability-note{border-color:var(--pet-line);background:#f8fcfc;color:var(--pet-ink)}.test-banner{border-color:#f5bdd9;background:#fff0f8;color:var(--pet-pink-dark)}.booking-rules input{accent-color:var(--pet-pink)}.booking-success{border-color:var(--pet-line);background:#fff;box-shadow:0 14px 42px #06707a14}
+.booking-recap,.payment-preview,.booking-rules,.package-total,.availability-note{border-color:var(--pet-line);background:#f8fcfc;color:var(--pet-ink)}.amount-choices small,.booking-recap small,.booking-recap em,.card-test-heading small,.card-charge,.card-charge b{color:var(--pet-muted)}.card-test-heading{background:#eaf8f9}.booking-rules label{border-color:var(--pet-line)}.test-banner{border-color:#f5bdd9;background:#fff0f8;color:var(--pet-pink-dark)}.booking-rules input{accent-color:var(--pet-pink)}.booking-success{border-color:var(--pet-line);background:#fff;box-shadow:0 14px 42px #06707a14}.flow-help,.flow-help span,.flow-help b,.flow-help small{color:var(--pet-muted)}.flow-help b{color:var(--pet-ink)}
 @media(max-width:760px){.client-header{position:sticky;inset:0;width:100%;height:72px;padding:8px 16px;flex-direction:row;align-items:center;border-right:0;border-bottom:1px solid var(--pet-line)}.client-header img{width:72px;height:54px;margin:0;border-radius:10px}.booking-brand-copy{margin:0 0 0 auto;display:block;text-align:right}.booking-brand-copy span,.booking-brand-copy b{display:block}.booking-menu-label,.booking-step-nav,.booking-side-note{display:none}.flow-wrap{min-height:calc(100vh - 72px);margin:0;padding:24px 16px 40px}.flow-card{padding:26px 20px;border-radius:20px}.booking-type{grid-template-columns:1fr}.flow-card h1{font-size:30px}}
+
+/* Brand isolation: prevent legacy Lane selectors from winning by specificity. */
+.client-shell .flow-lead,.client-shell .choice-list button span small,.client-shell .amount-choices button span small,.client-shell .booking-recap span small,.client-shell .booking-recap span em,.client-shell .booking-recap strong small,.client-shell .card-test-heading small,.client-shell .card-charge,.client-shell .selected-dates span,.client-shell .multi-times article>div:first-child small,.client-shell .flow-help,.client-shell .flow-help span,.client-shell .flow-help small{color:var(--pet-muted)!important}
+.client-shell .flow-help b,.client-shell .card-charge b,.client-shell .card-test-fields label,.client-shell .card-test-fields input{color:var(--pet-ink)!important}
+.client-shell .calendar{border-color:var(--pet-line)!important;background:#fff!important}
+.client-shell .calendar>header{background:#eaf8f9!important;color:var(--pet-ink)!important}
+.client-shell .calendar>header button{color:var(--pet-teal-dark)!important}
+.client-shell .calendar-week span{color:var(--pet-muted)!important}
+.client-shell .calendar-grid button{color:var(--pet-ink)!important}
+.client-shell .calendar-grid button:hover:not(:disabled){background:#f3fbfc!important}
+.client-shell .calendar-grid button.selected{border-color:var(--pet-teal)!important;background:linear-gradient(135deg,var(--pet-teal-dark),var(--pet-teal))!important;color:#fff!important;box-shadow:inset 0 -3px var(--pet-pink)}
+.client-shell .calendar-grid button:disabled{color:#a9bdc0!important;background:#f7fbfb!important}
+.client-shell .calendar-grid button small{color:var(--pet-muted)!important}
+.client-shell .calendar-grid button.selected small{color:#e8fbfc!important}
+.client-shell .selected-dates,.client-shell .package-total{background:#eef9fa!important;color:var(--pet-ink)!important}
+.client-shell .multi-times article{border-color:var(--pet-line)!important}
+.client-shell .multi-times button{border-color:var(--pet-line)!important;color:var(--pet-ink)!important}
+.client-shell .multi-times button:hover{border-color:var(--pet-teal)!important;background:#f3fbfc!important}
+.client-shell .multi-times button.selected{border-color:var(--pet-teal)!important;background:linear-gradient(135deg,var(--pet-teal-dark),var(--pet-teal))!important;color:#fff!important;box-shadow:inset 0 -3px var(--pet-pink)}
+.client-shell .payment-preview,.client-shell .payment-preview.pix-generated img,.client-shell .card-test-fields input,.client-shell .booking-rules,.client-shell .booking-rules label{border-color:var(--pet-line)!important}
+.client-shell .card-test-heading{background:#eaf8f9!important}
+.client-shell .payment-preview code{background:#eef9fa!important;color:var(--pet-teal-dark)!important}
+.client-shell .payment-preview button{color:var(--pet-teal-dark)!important}
+.client-shell .booking-rules{background:#f8fcfc!important;color:var(--pet-ink)!important}
