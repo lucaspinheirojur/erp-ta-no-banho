@@ -41,32 +41,6 @@ type Service = { id: number; name: string; category: string; duration: string; p
 type PackagePlan = { id: number; name: string; sessions: number; periodicity: string; validityDays: number; price: number | null; serviceId: number; courtesy: string; active: boolean };
 type PackageUsage = { id: number; planId: number; clientId?: number; pet: string; client: string; used: number; total: number; startDate?: string; price?: number | null; payment?: Payment };
 
-const initialClients: Client[] = [
-  { id: 1, name: "Cliente Exemplo 1", phone: "Não informado", pet: "Pet Exemplo 1", breed: "Spitz Alemão", size: "Pequeno", note: "Pele sensível", color: "#ff8d78" },
-  { id: 2, name: "Cliente Exemplo 2", phone: "Não informado", pet: "Pet Exemplo 2", breed: "SRD", size: "Médio", note: "Gosta de petiscos", color: "#47b8a5" },
-  { id: 3, name: "Cliente Exemplo 3", phone: "Não informado", pet: "Pet Exemplo 3", breed: "Golden Retriever", size: "Grande", note: "Usa táxi dog", color: "#e8a93e" },
-  { id: 4, name: "Cliente Exemplo 4", phone: "Não informado", pet: "Pet Exemplo 4", breed: "Pug", size: "Pequeno", note: "Primeiro atendimento", color: "#7b8de5" },
-  { id: 5, name: "Cliente Exemplo 5", phone: "Não informado", pet: "Pet Exemplo 5", breed: "Lhasa Apso", size: "Pequeno", note: "Reativa ao secador", color: "#c984d7" },
-];
-
-const initialAppointments: Appointment[] = [
-  { id: 1, day: 0, time: "09:00", pet: "Pet Exemplo 1", breed: "Spitz Alemão", client: "Cliente Exemplo 1", service: "Banho + hidratação", duration: "1h", status: "confirmado", color: "#ff8d78", price: 80, payment: { method: "PIX", amount: 80, paidAt: "Hoje, 09:54" } },
-  { id: 2, day: 0, time: "10:30", pet: "Pet Exemplo 4", breed: "Pug", client: "Cliente Exemplo 4", service: "Primeiro banho", duration: "1h", status: "aguardando", color: "#7b8de5", price: 70 },
-  { id: 3, day: 0, time: "13:00", pet: "Pet Exemplo 3", breed: "Golden Retriever", client: "Cliente Exemplo 3", service: "Banho + escovação", duration: "1h20", status: "confirmado", color: "#e8a93e", price: 120 },
-  { id: 4, day: 0, time: "15:00", pet: "Pet Exemplo 2", breed: "SRD · Médio", client: "Cliente Exemplo 2", service: "Banho completo", duration: "1h20", status: "confirmado", color: "#47b8a5", price: 90, payment: { method: "Dinheiro", amount: 90, paidAt: "Hoje, 16:18" } },
-  { id: 5, day: 1, time: "09:30", pet: "Pet Exemplo 5", breed: "Lhasa Apso", client: "Cliente Exemplo 5", service: "Banho + desembolo", duration: "2h", status: "aguardando", color: "#c984d7", price: 110 },
-  { id: 6, day: 1, time: "13:30", pet: "Pet Exemplo 1", breed: "Spitz Alemão", client: "Cliente Exemplo 1", service: "Banho quinzenal", duration: "1h", status: "confirmado", color: "#ff8d78", price: 70 },
-];
-
-const initialServices: Service[] = [
-  { id: 1, name: "Banho completo", category: "Banho", duration: "1h", price: null, description: "Higienização, secagem e finalização.", active: true, color: "#20a390" },
-  { id: 2, name: "Tosa higiênica", category: "Tosa", duration: "40min", price: null, description: "Acabamento cuidadoso das áreas higiênicas.", active: true, color: "#ff7b63" },
-  { id: 3, name: "Hidratação", category: "Adicional", duration: "30min", price: null, description: "Tratamento para pelagem e pele.", active: true, color: "#7b8de5" },
-  { id: 4, name: "Retirada de nós", category: "Adicional", duration: "40min", price: null, description: "Desembolo avaliado conforme a pelagem.", active: true, color: "#d69b2a" },
-  { id: 5, name: "Corte de unhas", category: "Cuidados", duration: "15min", price: null, description: "Corte seguro e acabamento das unhas.", active: true, color: "#c984d7" },
-  { id: 6, name: "Táxi dog", category: "Transporte", duration: "A combinar", price: null, description: "Busca e entrega conforme a região.", active: true, color: "#438bbd" },
-];
-
 const initialPackages: PackagePlan[] = [
   { id: 1, name: "Banhos semanais", sessions: 4, periodicity: "Semanal", validityDays: 35, price: null, serviceId: 1, courtesy: "1 corte de unhas", active: true },
   { id: 2, name: "Banhos quinzenais", sessions: 4, periodicity: "Quinzenal", validityDays: 70, price: null, serviceId: 1, courtesy: "Hidratação na última sessão", active: true },
@@ -89,12 +63,6 @@ const navItems: { id: View; label: string; icon: string }[] = [
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 const displayPrice = (value: number | null) => value === null ? "Valor a definir" : formatCurrency(value);
 
-function suggestedPrice(service: string) {
-  if (service.includes("desembolo") || service.includes("tesoura")) return 110;
-  if (service.includes("hidratação")) return 80;
-  return 70;
-}
-
 function formatToday() {
   const localNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const value = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(localNow);
@@ -107,6 +75,7 @@ function getDays() {
     date.setDate(date.getDate() + index);
     return {
       index,
+      iso: date.toISOString().slice(0, 10),
       weekday: new Intl.DateTimeFormat("pt-BR", { weekday: "short" }).format(date).replace(".", ""),
       day: String(date.getDate()).padStart(2, "0"),
       month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(date).replace(".", ""),
@@ -121,9 +90,9 @@ function StatusPill({ status }: { status: Appointment["status"] }) {
 
 export default function Home() {
   const [view, setView] = useState<View>("inicio");
-  const [clients, setClients] = useState<Client[]>(initialClients);
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [packages, setPackages] = useState<PackagePlan[]>(initialPackages);
   const [packageUsage, setPackageUsage] = useState<PackageUsage[]>(initialPackageUsage);
   const [selectedDay, setSelectedDay] = useState(0);
@@ -138,25 +107,34 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [todayLabel, setTodayLabel] = useState("Hoje");
-  const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
+  const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, iso: "", weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
+
+  const loadManagementData = async () => {
+    const [clientsResponse, appointmentsResponse, servicesResponse] = await Promise.all([
+      fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"),
+    ]);
+    if ([clientsResponse, appointmentsResponse, servicesResponse].some((response) => response.status === 403)) {
+      setToast("Entre com a conta administrativa para carregar os dados reais.");
+      return;
+    }
+    const [clientData, appointmentData, serviceData] = await Promise.all([
+      clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(),
+    ]);
+    setClients((clientData.clients ?? []).map((item: { id:number; name:string; phone:string; notes?:string; pets?:Array<{name:string;breed?:string;size:string;notes?:string}> }) => { const pet=item.pets?.[0]; return { id:item.id, name:item.name, phone:item.phone, pet:pet?.name || "Pet não informado", breed:pet?.breed || "Não informada", size:pet?.size || "Não informado", note:pet?.notes || item.notes || "Sem observações", color:palette[item.id % palette.length] }; }));
+    const today = new Date().toISOString().slice(0, 10);
+    setAppointments((appointmentData.appointments ?? []).map((item: { id:number; appointmentDate:string; appointmentTime:string; petName:string; clientName:string; service:string; status:string; priceCents:number; paidCents:number; paymentMethod:string }) => {
+      const offset = Math.round((new Date(`${item.appointmentDate}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86400000);
+      return { id:item.id, day:offset, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
+    }));
+    const mappedServices: Service[] = (serviceData.services ?? []).map((item: { id:number; name:string; group:string; duration:string; price:number; detail:string; active:boolean }) => ({ id:item.id, name:item.name, category:item.group, duration:item.duration, price:item.price, description:item.detail, active:item.active, color:palette[item.id % palette.length] }));
+    setServices(mappedServices);
+  };
 
   useEffect(() => {
     const animationFrame = window.requestAnimationFrame(() => {
       setTodayLabel(formatToday());
       setDays(getDays());
-      const storedClients = localStorage.getItem("tanobanho-clients");
-      const storedAppointments = localStorage.getItem("tanobanho-appointments");
-      const storedServices = localStorage.getItem("tanobanho-services");
-      const storedPackages = localStorage.getItem("tanobanho-packages");
-      const storedUsage = localStorage.getItem("tanobanho-package-usage");
-      if (storedClients) setClients(JSON.parse(storedClients));
-      if (storedAppointments) {
-        const parsed = JSON.parse(storedAppointments) as Appointment[];
-        setAppointments(parsed.map((item) => ({ ...item, price: item.price ?? suggestedPrice(item.service) })));
-      }
-      if (storedServices) setServices(JSON.parse(storedServices));
-      if (storedPackages) setPackages(JSON.parse(storedPackages));
-      if (storedUsage) setPackageUsage(JSON.parse(storedUsage));
+      void loadManagementData().catch(() => setToast("Não foi possível carregar o painel agora."));
     });
     return () => window.cancelAnimationFrame(animationFrame);
   }, []);
@@ -194,54 +172,39 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const addClient = (event: FormEvent<HTMLFormElement>) => {
+  const addClient = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const palette = ["#ef5aa5", "#0a9eaa", "#08747d", "#f177b4", "#18b8c2"];
-    const newClient: Client = {
-      id: Date.now(),
+    const payload = {
       name: String(data.get("name")),
       phone: String(data.get("phone")),
       pet: String(data.get("pet")),
       breed: String(data.get("breed")),
       size: String(data.get("size")),
-      note: String(data.get("note") || "Sem observações"),
-      color: palette[clients.length % palette.length],
+      notes: String(data.get("note") || ""),
     };
-    const updated = [newClient, ...clients];
-    setClients(updated);
-    localStorage.setItem("tanobanho-clients", JSON.stringify(updated));
+    const response = await fetch("/api/clients", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(payload) });
+    const result = await response.json(); if (!response.ok) { setToast(result.error || "Não foi possível cadastrar."); return; }
+    await loadManagementData();
     setModal(null);
-    setToast(`${newClient.pet} e ${newClient.name} foram cadastrados.`);
+    setToast(`${payload.pet} e ${payload.name} foram cadastrados.`);
     goTo("clientes");
   };
 
-  const addAppointment = (event: FormEvent<HTMLFormElement>) => {
+  const addAppointment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const selected = clients.find((client) => client.id === Number(data.get("client"))) ?? clients[0];
     const service = services.find((item) => item.id === Number(data.get("service"))) ?? services[0];
     const typedPrice = String(data.get("price") || "").trim();
-    const newAppointment: Appointment = {
-      id: Date.now(),
-      day: Number(data.get("day")),
-      time: String(data.get("time")),
-      pet: selected.pet,
-      breed: selected.breed,
-      client: selected.name,
-      service: service.name,
-      duration: service.duration,
-      status: "aguardando",
-      color: selected.color,
-      price: typedPrice ? Number(typedPrice) : service.price,
-    };
-    const updated = [...appointments, newAppointment];
-    setAppointments(updated);
-    localStorage.setItem("tanobanho-appointments", JSON.stringify(updated));
-    setSelectedDay(newAppointment.day);
+    const day = Number(data.get("day"));
+    const response = await fetch("/api/appointments", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ type:"appointment", name:selected.name, phone:selected.phone, service:service.name, date:days[day]?.iso, time:String(data.get("time")), priceCents:Math.round(Number(typedPrice || service.price || 0) * 100) }) });
+    const result=await response.json(); if(!response.ok){setToast(result.error || "Não foi possível agendar.");return;}
+    await loadManagementData(); setSelectedDay(day);
     setModal(null);
     setBookingServiceId(null);
-    setToast(`Horário de ${newAppointment.pet} adicionado à agenda.`);
+    setToast(`Horário de ${selected.pet} adicionado à agenda.`);
     goTo("agenda");
   };
 
@@ -318,10 +281,9 @@ export default function Home() {
     setPackageUsage(updated); localStorage.setItem("tanobanho-package-usage", JSON.stringify(updated)); setToast("Sessão registrada no pacote.");
   };
 
-  const confirmAppointment = (id: number) => {
-    const updated = appointments.map((item) => item.id === id ? { ...item, status: "confirmado" as const } : item);
-    setAppointments(updated);
-    localStorage.setItem("tanobanho-appointments", JSON.stringify(updated));
+  const confirmAppointment = async (id: number) => {
+    const response=await fetch("/api/appointments",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id,status:"confirmed"})});
+    if(!response.ok){setToast("Não foi possível confirmar o atendimento.");return;} await loadManagementData();
     setToast("Atendimento confirmado com sucesso.");
   };
 
@@ -330,7 +292,7 @@ export default function Home() {
     setModal("payment");
   };
 
-  const registerPayment = (event: FormEvent<HTMLFormElement>) => {
+  const registerPayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedPaymentAppointment) return;
     const data = new FormData(event.currentTarget);
@@ -339,9 +301,8 @@ export default function Home() {
       amount: Number(data.get("amount")),
       paidAt: "Agora",
     };
-    const updated = appointments.map((item) => item.id === selectedPaymentAppointment.id ? { ...item, payment } : item);
-    setAppointments(updated);
-    localStorage.setItem("tanobanho-appointments", JSON.stringify(updated));
+    const response=await fetch("/api/appointments",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({id:selectedPaymentAppointment.id,paidCents:Math.round(payment.amount*100),paymentMethod:payment.method})});
+    if(!response.ok){setToast("Não foi possível registrar o pagamento.");return;} await loadManagementData();
     setModal(null);
     setPaymentAppointmentId(null);
     setToast(`Pagamento de ${selectedPaymentAppointment.pet} confirmado via ${payment.method}.`);
