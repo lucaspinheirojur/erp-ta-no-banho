@@ -24,6 +24,7 @@ export default async function AgendarCoverPage() {
             className="photo-cover-logo"
             width={330}
             height={130}
+            unoptimized
           />
           <div className="booking-closed-card">
             <h1>Reservas on-line indisponíveis</h1>
@@ -42,6 +43,7 @@ export default async function AgendarCoverPage() {
           className="photo-cover-logo"
           width={330}
           height={130}
+          unoptimized
         />
         <div className="photo-cover-actions">
           {bookingMode === "open" ? (

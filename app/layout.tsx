@@ -5,6 +5,7 @@ import "./brand.css";
 import "./experience.css";
 import "./modal.css";
 import "./payment.css";
+import "./ta-no-banho-booking.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });

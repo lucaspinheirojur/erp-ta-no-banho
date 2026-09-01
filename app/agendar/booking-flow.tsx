@@ -422,6 +422,7 @@ export default function BookingFlow() {
             alt="Tá no Banho"
             width={180}
             height={180}
+            unoptimized
           />
           <p className="kicker">
             {method === "cash" ? "RESERVA CONFIRMADA" : "PAGAMENTO CONFIRMADO"}
@@ -468,11 +469,25 @@ export default function BookingFlow() {
           alt="Tá no Banho"
           width={180}
           height={180}
+          unoptimized
         />
-        <div>
+        <div className="booking-brand-copy">
           <span>Reserva online</span>
           <b>Tá no Banho</b>
         </div>
+        <p className="booking-menu-label">ETAPAS DA RESERVA</p>
+        <nav className="booking-step-nav" aria-label="Progresso da reserva">
+          {labels.map((label, index) => (
+            <span key={label} className={index === step ? "active" : index < step ? "done" : ""}>
+              <i>{index < step ? "✓" : index + 1}</i>
+              {label}
+            </span>
+          ))}
+        </nav>
+        <aside className="booking-side-note">
+          <b>Reserva segura ✦</b>
+          <small>Escolha o cuidado, o horário e a forma de pagamento.</small>
+        </aside>
       </header>
       <section className="flow-wrap">
         <div className="flow-progress">
@@ -499,7 +514,7 @@ export default function BookingFlow() {
                   onClick={() => chooseCategory("avulso")}
                 >
                   <b>Agendamento avulso</b>
-                  <small>Aplicações, manutenções e cuidados pontuais</small>
+                  <small>Banho, tosa e cuidados pontuais</small>
                 </button>
                 <button
                   className={
@@ -720,7 +735,7 @@ export default function BookingFlow() {
               </div>
               <p className="availability-note">
                 <i /> O último horário possível considera a duração do serviço,
-                o intervalo e a pausa configurados pela profissional.
+                o intervalo e a pausa configurados pela equipe.
               </p>
             </>
           )}

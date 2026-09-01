@@ -69,6 +69,7 @@ export default function InstallApp() {
               alt="Tá no Banho"
               width={192}
               height={192}
+              unoptimized
             />
             <p className="kicker">INSTALAR NO CELULAR</p>
             <h2>Adicione Tá no Banho à tela inicial</h2>

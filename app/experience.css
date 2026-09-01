@@ -2410,30 +2410,20 @@ body {
 }
 
 .photo-cover-shade {
-  background:
-    linear-gradient(
-      90deg,
-      rgba(51, 35, 24, 0.97) 0%,
-      rgba(77, 54, 37, 0.9) 30%,
-      rgba(113, 82, 56, 0.54) 62%,
-      rgba(241, 229, 217, 0.12) 100%
-    ),
-    linear-gradient(
-      0deg,
-      rgba(54, 37, 25, 0.92) 0%,
-      rgba(93, 66, 45, 0.1) 46%,
-      rgba(238, 220, 202, 0.24) 100%
-    );
+  background: linear-gradient(135deg, #003e49c7, #00899438 55%, #ec5aa543);
 }
 .photo-cover-content {
   align-items: flex-start;
   text-align: left;
 }
 .photo-cover-logo {
-  width: clamp(260px, 36vw, 510px);
-  height: auto;
+  width: clamp(260px, 31vw, 360px);
+  height: 235px;
   margin: auto 0 0;
-  filter: brightness(0) invert(1) sepia(0.12) drop-shadow(0 4px 24px #2d1c12);
+  object-fit: cover;
+  object-position: center 54%;
+  border-radius: 24px;
+  filter: drop-shadow(0 16px 34px #00313970);
 }
 .photo-cover-actions {
   margin: auto 0 0;
@@ -2445,13 +2435,13 @@ body {
   padding: 16px 18px;
 }
 .photo-cover-actions > a {
-  background: #f7efe8;
-  color: #4e3927;
-  border-color: #f7efe8;
+  background: #fff;
+  color: #006f78;
+  border-color: #fff;
 }
 .install-button {
-  background: #4e3927e8;
-  border-color: #c8aa8d;
+  background: #ec5aa5;
+  border-color: #ffb8dd;
   color: #fff;
 }
 @media (max-width: 600px) {
@@ -2459,14 +2449,7 @@ body {
     background-position: 48% center;
   }
   .photo-cover-shade {
-    background:
-      linear-gradient(90deg, rgba(53, 36, 24, 0.88), rgba(90, 62, 41, 0.44)),
-      linear-gradient(
-        0deg,
-        rgba(48, 32, 21, 0.96) 0%,
-        rgba(74, 50, 33, 0.15) 55%,
-        rgba(237, 218, 200, 0.18) 100%
-      );
+    background: linear-gradient(180deg, #003f49a8, #007c8680 52%, #00343fcf);
   }
   .photo-cover-content {
     align-items: center;
@@ -2475,6 +2458,7 @@ body {
   }
   .photo-cover-logo {
     width: min(330px, 84vw);
+    height: 215px;
     margin: auto 0 0;
   }
   .photo-cover-actions {
