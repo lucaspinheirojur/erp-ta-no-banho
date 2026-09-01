@@ -7,7 +7,8 @@ import { createSupabaseServerClient } from "./supabase/server";
 export type Manager = { userId: string; email: string; fullName: string | null; organizationId: string; role: string; welcomeSeenAt: string | null };
 
 export async function getManager(): Promise<Manager | null> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient().catch(() => null);
+  if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return null;
   const rows = await getDb().select().from(profiles).where(and(eq(profiles.userId, user.id), inArray(profiles.role, ["owner", "admin", "staff"]))).limit(1);
