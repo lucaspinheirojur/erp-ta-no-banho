@@ -328,7 +328,6 @@ export default function Home() {
           <Image className="brand-logo" src="/logo-ta-no-banho.jpeg" alt="Logomarca Tá no Banho" width={240} height={240} priority unoptimized />
         </button>
         <nav aria-label="Navegação principal">
-          <p className="nav-label">MENU</p>
           {navItems.map((item) => (
             <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => goTo(item.id)}>
               <NavIcon name={item.id} />{item.label}
