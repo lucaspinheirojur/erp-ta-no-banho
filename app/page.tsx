@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 
-type View = "inicio" | "agenda" | "clientes" | "servicos" | "pacotes" | "financeiro" | "analises";
+type View = "inicio" | "agenda" | "clientes" | "servicos" | "pacotes" | "financeiro" | "analises" | "configuracoes";
 
 type Payment = {
   method: "PIX" | "Dinheiro" | "Cartão de débito" | "Cartão de crédito";
@@ -37,6 +37,7 @@ type Appointment = {
   price: number | null;
   payment?: Payment;
   phone?: string;
+  date?: string;
 };
 
 type Service = { id: number; name: string; category: string; duration: string; price: number | null; description: string; active: boolean; color: string };
@@ -64,6 +65,7 @@ const navItems: { id: View; label: string }[] = [
   { id: "pacotes", label: "Pacotes" },
   { id: "financeiro", label: "Financeiro" },
   { id: "analises", label: "Análises" },
+  { id: "configuracoes", label: "Configurações" },
 ];
 
 function NavIcon({ name }: { name: View }) {
@@ -75,6 +77,7 @@ function NavIcon({ name }: { name: View }) {
     pacotes: <><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5Z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.2l8 4.5" /></>,
     financeiro: <><circle cx="12" cy="12" r="9" /><path d="M16 8.5c-.7-.9-2-1.5-4-1.5-2.2 0-4 1.1-4 3s1.5 2.7 4 3 4 1.1 4 3-1.8 3-4 3c-2 0-3.5-.7-4.2-1.7M12 5v14" /></>,
     analises: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><path d="m4 7 6-4 6 7 5-5" /></>,
+    configuracoes: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,
   };
   return <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
@@ -116,6 +119,7 @@ export default function Home() {
   const [packageUsage, setPackageUsage] = useState<PackageUsage[]>([]);
   const [expenses,setExpenses]=useState<Expense[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [agendaView,setAgendaView]=useState<"dia"|"semana"|"mes">("dia");
   const [modal, setModal] = useState<"client" | "appointment" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | "expense" | null>(null);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
   const [editingPackageId, setEditingPackageId] = useState<number | null>(null);
@@ -155,7 +159,7 @@ export default function Home() {
     const today = new Date().toISOString().slice(0, 10);
     setAppointments((appointmentData.appointments ?? []).map((item: { id:number; appointmentDate:string; appointmentTime:string; petName:string; clientName:string; service:string; status:string; priceCents:number; paidCents:number; paymentMethod:string }) => {
       const offset = Math.round((new Date(`${item.appointmentDate}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86400000);
-      return { id:item.id, day:offset, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, phone:(item as {phone?:string}).phone, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
+      return { id:item.id, day:offset, date:item.appointmentDate, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, phone:(item as {phone?:string}).phone, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
     }));
     const mappedServices: Service[] = (serviceData.services ?? []).map((item: { id:number; name:string; group:string; duration:string; price:number; detail:string; active:boolean }) => ({ id:item.id, name:item.name, category:item.group, duration:item.duration, price:item.price, description:item.detail, active:item.active, color:palette[item.id % palette.length] }));
     setServices(mappedServices);
@@ -217,6 +221,12 @@ export default function Home() {
   const reportQuery=new URLSearchParams(reportMode==="month"?{mode:"month",month:reportMonth}:{mode:"custom",from:reportFrom,to:reportTo}).toString();
   const editingService = services.find((item) => item.id === editingServiceId);
   const editingPackage = packages.find((item) => item.id === editingPackageId);
+  const currentMonthDate=new Date();
+  const currentYear=currentMonthDate.getFullYear(),currentMonth=currentMonthDate.getMonth();
+  const monthStartOffset=new Date(currentYear,currentMonth,1).getDay();
+  const monthLength=new Date(currentYear,currentMonth+1,0).getDate();
+  const monthCells=Array.from({length:monthStartOffset+monthLength},(_,index)=>index<monthStartOffset?null:index-monthStartOffset+1);
+  const monthTitle=new Intl.DateTimeFormat("pt-BR",{month:"long",year:"numeric"}).format(currentMonthDate);
 
   const goTo = (next: View) => {
     setView(next);
@@ -430,18 +440,8 @@ export default function Home() {
         {view === "agenda" && (
           <div className="content">
             <section className="page-heading compact"><div><p>ORGANIZAÇÃO DO DIA</p><h1>Agenda</h1><h2>Visualize os horários e confirme cada atendimento.</h2></div><button className="primary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}><span>＋</span> Novo agendamento</button></section>
-            <section className="agenda-settings panel">
-              <div className="agenda-settings-head"><div><small>AGENDAMENTO ON-LINE</small><h3>Abertura do aplicativo</h3><p>Controle como o aplicativo aparece para clientes que desejam reservar.</p></div><span className={`booking-mode-badge ${bookingMode}`}>{bookingMode==="open"?"Agenda aberta":bookingMode==="paused"?"Temporariamente pausada":"Somente gestão"}</span></div>
-              <div className="booking-mode-options">
-                <button disabled={savingBookingMode} className={bookingMode==="open"?"selected":""} onClick={()=>changeBookingMode("open")}><b>Habilitar reservas</b><span>O aplicativo exibe os horários e aceita novos agendamentos.</span></button>
-                <button disabled={savingBookingMode} className={bookingMode==="paused"?"selected":""} onClick={()=>changeBookingMode("paused")}><b>Pausar agenda</b><span>O aplicativo permanece visível, mas informa que a agenda está fechada.</span></button>
-                <button disabled={savingBookingMode} className={bookingMode==="management_only"?"selected":""} onClick={()=>changeBookingMode("management_only")}><b>Desabilitar aplicativo</b><span>Somente a gestão poderá criar novos agendamentos.</span></button>
-              </div>
-              <div className="schedule-heading"><div><small>DISPONIBILIDADE SEMANAL</small><h3>Horários de atendimento</h3></div><button className="secondary-button" disabled={savingSchedule} onClick={saveSchedule}>{savingSchedule?"Salvando...":"Salvar horários"}</button></div>
-              <div className="schedule-table"><div className="schedule-table-head"><span>Dia</span><span>Jornada</span><span>Pausa</span></div>{availabilityDays.map((day,index)=><article key={day.day} className={day.enabled?"":"disabled"}><label className="schedule-toggle"><input type="checkbox" checked={day.enabled} onChange={event=>updateAvailabilityDay(index,"enabled",event.target.checked)}/><i/><span><b>{day.day}</b><small>{day.enabled?"Atendimento ativo":"Não atende"}</small></span></label><div className="schedule-time-pair"><input type="time" value={day.start} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"start",event.target.value)}/><span>até</span><input type="time" value={day.end} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"end",event.target.value)}/></div><div className="schedule-time-pair"><input type="time" value={day.breakStart} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakStart",event.target.value)}/><span>até</span><input type="time" value={day.breakEnd} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakEnd",event.target.value)}/></div></article>)}</div>
-              <div className="schedule-rules"><label><span><b>Intervalo entre atendimentos</b><small>Tempo para organizar o espaço entre clientes.</small></span><select value={intervalMinutes} onChange={event=>setIntervalMinutes(Number(event.target.value))}><option value="0">Sem intervalo</option><option value="15">15 minutos</option><option value="30">30 minutos</option></select></label><label><span><b>Antecedência mínima</b><small>Prazo mínimo para uma nova reserva.</small></span><select value={minimumAdvanceHours} onChange={event=>setMinimumAdvanceHours(Number(event.target.value))}><option value="2">2 horas</option><option value="12">12 horas</option><option value="24">24 horas</option><option value="48">48 horas</option></select></label></div>
-            </section>
-            <section className="date-selector">
+            <section className="agenda-view-toolbar panel"><div className="agenda-view-switch">{([['dia','Dia'],['semana','Semana'],['mes','Mês']] as const).map(([value,label])=><button key={value} className={agendaView===value?"selected":""} onClick={()=>setAgendaView(value)}>{label}</button>)}</div><strong>{agendaView==="mes"?monthTitle:"Próximos atendimentos"}</strong></section>
+            {agendaView==="dia"&&<><section className="date-selector">
               {days.map((day) => <button key={day.index} onClick={() => setSelectedDay(day.index)} className={selectedDay === day.index ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
             </section>
             {selectedDay === 0 && <section className="payment-summary" aria-label="Resumo dos pagamentos do dia">
@@ -467,7 +467,9 @@ export default function Home() {
                   ))}
                 </div>
               ) : <div className="empty-state"><span>🐶</span><h3>Dia livre por aqui</h3><p>Adicione um atendimento para começar a organizar este dia.</p><button className="secondary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}>＋ Novo agendamento</button></div>}
-            </section>
+            </section></>}
+            {agendaView==="semana"&&<section className="week-calendar">{days.map(day=><article key={day.index}><header><b>{day.index===0?"Hoje":day.weekday}</b><small>{day.day} {day.month}</small></header>{appointments.filter(item=>item.day===day.index).sort((a,b)=>a.time.localeCompare(b.time)).map(item=><button key={item.id} onClick={()=>{setSelectedDay(day.index);setAgendaView("dia")}}><time>{item.time}</time><b>{item.pet}</b><span>{item.service}</span></button>)}{!appointments.some(item=>item.day===day.index)&&<p>Sem atendimentos</p>}</article>)}</section>}
+            {agendaView==="mes"&&<section className="month-calendar panel"><div className="month-weekdays">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(day=><b key={day}>{day}</b>)}</div><div className="month-cells">{monthCells.map((day,index)=>day===null?<i key={`empty-${index}`}/>:<article key={day}><strong>{day}</strong>{appointments.filter(item=>item.date===`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`).slice(0,3).map(item=><span key={item.id}>{item.time} · {item.pet}</span>)}</article>)}</div></section>}
           </div>
         )}
 
@@ -487,6 +489,18 @@ export default function Home() {
                 </article>
               ))}
               <button className="add-client-card" onClick={() => setModal("client")}><span>＋</span><strong>Cadastrar novo cliente</strong><small>Adicione tutor e pet em uma única etapa</small></button>
+            </section>
+          </div>
+        )}
+
+        {view === "configuracoes" && (
+          <div className="content"><section className="page-heading compact"><div><p>REGRAS OPERACIONAIS</p><h1>Configurações</h1><h2>Defina a abertura do aplicativo e os horários disponíveis para reservas.</h2></div></section>
+            <section className="agenda-settings panel">
+              <div className="agenda-settings-head"><div><small>AGENDAMENTO ON-LINE</small><h3>Abertura do aplicativo</h3><p>Controle como o aplicativo aparece para clientes que desejam reservar.</p></div><span className={`booking-mode-badge ${bookingMode}`}>{bookingMode==="open"?"Agenda aberta":bookingMode==="paused"?"Temporariamente pausada":"Somente gestão"}</span></div>
+              <div className="booking-mode-options"><button disabled={savingBookingMode} className={bookingMode==="open"?"selected":""} onClick={()=>changeBookingMode("open")}><b>Habilitar reservas</b><span>Exibe horários e aceita novos agendamentos.</span></button><button disabled={savingBookingMode} className={bookingMode==="paused"?"selected":""} onClick={()=>changeBookingMode("paused")}><b>Pausar agenda</b><span>Mantém o aplicativo visível com a agenda fechada.</span></button><button disabled={savingBookingMode} className={bookingMode==="management_only"?"selected":""} onClick={()=>changeBookingMode("management_only")}><b>Desabilitar aplicativo</b><span>Somente a gestão poderá criar agendamentos.</span></button></div>
+              <div className="schedule-heading"><div><small>DISPONIBILIDADE SEMANAL</small><h3>Horários de atendimento</h3></div><button className="secondary-button" disabled={savingSchedule} onClick={saveSchedule}>{savingSchedule?"Salvando...":"Salvar horários"}</button></div>
+              <div className="schedule-table"><div className="schedule-table-head"><span>Dia</span><span>Jornada</span><span>Pausa</span></div>{availabilityDays.map((day,index)=><article key={day.day} className={day.enabled?"":"disabled"}><label className="schedule-toggle"><input type="checkbox" checked={day.enabled} onChange={event=>updateAvailabilityDay(index,"enabled",event.target.checked)}/><i/><span><b>{day.day}</b><small>{day.enabled?"Atendimento ativo":"Não atende"}</small></span></label><div className="schedule-time-pair"><input type="time" value={day.start} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"start",event.target.value)}/><span>até</span><input type="time" value={day.end} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"end",event.target.value)}/></div><div className="schedule-time-pair"><input type="time" value={day.breakStart} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakStart",event.target.value)}/><span>até</span><input type="time" value={day.breakEnd} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakEnd",event.target.value)}/></div></article>)}</div>
+              <div className="schedule-rules"><label><span><b>Intervalo entre atendimentos</b><small>Tempo para organizar o espaço entre clientes.</small></span><select value={intervalMinutes} onChange={event=>setIntervalMinutes(Number(event.target.value))}><option value="0">Sem intervalo</option><option value="15">15 minutos</option><option value="30">30 minutos</option></select></label><label><span><b>Antecedência mínima</b><small>Prazo mínimo para uma nova reserva.</small></span><select value={minimumAdvanceHours} onChange={event=>setMinimumAdvanceHours(Number(event.target.value))}><option value="2">2 horas</option><option value="12">12 horas</option><option value="24">24 horas</option><option value="48">48 horas</option></select></label></div>
             </section>
           </div>
         )}
