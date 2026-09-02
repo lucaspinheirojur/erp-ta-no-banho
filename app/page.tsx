@@ -20,6 +20,7 @@ type Client = {
   size: string;
   note: string;
   color: string;
+  createdAt?: string;
 };
 
 type Appointment = {
@@ -35,6 +36,7 @@ type Appointment = {
   color: string;
   price: number | null;
   payment?: Payment;
+  phone?: string;
 };
 
 type Service = { id: number; name: string; category: string; duration: string; price: number | null; description: string; active: boolean; color: string };
@@ -99,6 +101,10 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [toast, setToast] = useState("");
   const [todayLabel, setTodayLabel] = useState("Hoje");
+  const [reportMode,setReportMode]=useState<"month"|"custom">("month");
+  const [reportMonth,setReportMonth]=useState(()=>new Date().toISOString().slice(0,7));
+  const [reportFrom,setReportFrom]=useState(()=>`${new Date().toISOString().slice(0,7)}-01`);
+  const [reportTo,setReportTo]=useState(()=>new Date().toISOString().slice(0,10));
   const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, iso: "", weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
 
   const loadManagementData = async () => {
@@ -113,11 +119,11 @@ export default function Home() {
     const [clientData, appointmentData, serviceData, packageData,financeData] = await Promise.all([
       clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(), packagesResponse.json(),financeResponse.json(),
     ]);
-    setClients((clientData.clients ?? []).map((item: { id:number; name:string; phone:string; notes?:string; pets?:Array<{name:string;breed?:string;size:string;notes?:string}> }) => { const pet=item.pets?.[0]; return { id:item.id, name:item.name, phone:item.phone, pet:pet?.name || "Pet não informado", breed:pet?.breed || "Não informada", size:pet?.size || "Não informado", note:pet?.notes || item.notes || "Sem observações", color:palette[item.id % palette.length] }; }));
+    setClients((clientData.clients ?? []).map((item: { id:number; name:string; phone:string; notes?:string; createdAt?:string; pets?:Array<{name:string;breed?:string;size:string;notes?:string}> }) => { const pet=item.pets?.[0]; return { id:item.id, name:item.name, phone:item.phone, pet:pet?.name || "Pet não informado", breed:pet?.breed || "Não informada", size:pet?.size || "Não informado", note:pet?.notes || item.notes || "Sem observações", color:palette[item.id % palette.length],createdAt:item.createdAt }; }));
     const today = new Date().toISOString().slice(0, 10);
     setAppointments((appointmentData.appointments ?? []).map((item: { id:number; appointmentDate:string; appointmentTime:string; petName:string; clientName:string; service:string; status:string; priceCents:number; paidCents:number; paymentMethod:string }) => {
       const offset = Math.round((new Date(`${item.appointmentDate}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86400000);
-      return { id:item.id, day:offset, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
+      return { id:item.id, day:offset, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, phone:(item as {phone?:string}).phone, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
     }));
     const mappedServices: Service[] = (serviceData.services ?? []).map((item: { id:number; name:string; group:string; duration:string; price:number; detail:string; active:boolean }) => ({ id:item.id, name:item.name, category:item.group, duration:item.duration, price:item.price, description:item.detail, active:item.active, color:palette[item.id % palette.length] }));
     setServices(mappedServices);
@@ -161,6 +167,11 @@ export default function Home() {
   const packageReceived = packageUsage.reduce((total, item) => total + (item.payment?.amount ?? 0), 0);
   const packagePending = packageUsage.reduce((total, item) => total + (item.payment ? 0 : (item.price ?? packages.find((plan) => plan.id === item.planId)?.price ?? 0)), 0);
   const totalExpenses=expenses.reduce((total,item)=>total+item.amountCents/100,0);
+  const yesterdayAppointments=appointments.filter(item=>item.day===-1).length;
+  const newClientsThisMonth=clients.filter(item=>item.createdAt?.startsWith(new Date().toISOString().slice(0,7))).length;
+  const appointmentCounts=new Map<string,number>();appointments.forEach(item=>{const key=item.phone||item.client;appointmentCounts.set(key,(appointmentCounts.get(key)||0)+1);});
+  const returnRate=appointmentCounts.size?Math.round([...appointmentCounts.values()].filter(count=>count>1).length/appointmentCounts.size*100):0;
+  const reportQuery=new URLSearchParams(reportMode==="month"?{mode:"month",month:reportMonth}:{mode:"custom",from:reportFrom,to:reportTo}).toString();
   const editingService = services.find((item) => item.id === editingServiceId);
   const editingPackage = packages.find((item) => item.id === editingPackageId);
 
@@ -340,10 +351,10 @@ export default function Home() {
               <button className="secondary-button" onClick={() => setModal("client")}><span>＋</span> Cadastrar cliente e pet</button>
             </section>
             <section className="stats-grid" aria-label="Indicadores">
-              <article className="stat-card coral"><span className="stat-icon">▣</span><div><small>ATENDIMENTOS HOJE</small><strong>{todayAppointments.length}</strong><p><b>+1</b> em relação ao sábado anterior</p></div></article>
+              <article className="stat-card coral"><span className="stat-icon">▣</span><div><small>ATENDIMENTOS HOJE</small><strong>{todayAppointments.length}</strong><p><b>{todayAppointments.length-yesterdayAppointments>=0?"+":""}{todayAppointments.length-yesterdayAppointments}</b> em relação a ontem</p></div></article>
               <article className="stat-card teal"><span className="stat-icon">R$</span><div><small>PREVISÃO DO DIA</small><strong>{formatCurrency(expectedToday)}</strong><p>Já recebido: <b>{formatCurrency(receivedToday)}</b></p></div></article>
-              <article className="stat-card violet"><span className="stat-icon">♡</span><div><small>CLIENTES ATIVOS</small><strong>{clients.length}</strong><p><b>2 novos</b> neste mês</p></div></article>
-              <article className="stat-card yellow"><span className="stat-icon">◎</span><div><small>TAXA DE RETORNO</small><strong>78%</strong><p><b>+6%</b> nos últimos 30 dias</p></div></article>
+              <article className="stat-card violet"><span className="stat-icon">♡</span><div><small>CLIENTES ATIVOS</small><strong>{clients.length}</strong><p><b>{newClientsThisMonth} novos</b> neste mês</p></div></article>
+              <article className="stat-card yellow"><span className="stat-icon">◎</span><div><small>TAXA DE RETORNO</small><strong>{returnRate}%</strong><p>Clientes com mais de um atendimento</p></div></article>
             </section>
             <section className="dashboard-grid">
               <article className="panel schedule-panel">
@@ -462,6 +473,14 @@ export default function Home() {
               <article><span className="finance-icon green">✓</span><div><small>RECEBIDO HOJE</small><strong>{formatCurrency(receivedToday)}</strong><p>{todayAppointments.filter((item) => item.payment).length} pagamentos registrados</p></div></article>
               <article><span className="finance-icon amber">↗</span><div><small>A RECEBER HOJE</small><strong>{formatCurrency(pendingToday)}</strong><p>{todayAppointments.filter((item) => !item.payment).length} atendimentos pendentes</p></div></article>
               <article><span className="finance-icon blue">R$</span><div><small>SALDO OPERACIONAL</small><strong>{formatCurrency(totalReceived + packageReceived-totalExpenses)}</strong><p>{formatCurrency(totalExpenses)} em despesas registradas</p></div></article>
+            </section>
+            <section className="panel report-panel">
+              <div className="panel-head"><div><small>RELATÓRIOS</small><h3>Exportar financeiro</h3></div><span className="payment-help">PDF para conferência · Excel para análise</span></div>
+              <div className="report-controls">
+                <div className="report-mode"><button className={reportMode==="month"?"active":""} onClick={()=>setReportMode("month")}>Mês completo</button><button className={reportMode==="custom"?"active":""} onClick={()=>setReportMode("custom")}>Período personalizado</button></div>
+                {reportMode==="month"?<label>Mês<input type="month" value={reportMonth} onChange={event=>setReportMonth(event.target.value)}/></label>:<><label>De<input type="date" value={reportFrom} onChange={event=>setReportFrom(event.target.value)}/></label><label>Até<input type="date" value={reportTo} min={reportFrom} onChange={event=>setReportTo(event.target.value)}/></label></>}
+                <div className="report-downloads"><a href={`/api/finance/report?${reportQuery}&format=pdf`} download>↓ Baixar PDF</a><a href={`/api/finance/report?${reportQuery}&format=xls`} download>↓ Baixar Excel</a></div>
+              </div>
             </section>
             <section className="panel payments-panel">
               <div className="panel-head"><div><small>ATENDIMENTOS</small><h3>Pagamentos e pendências</h3></div><span className="payment-help">Registre o recebimento na linha do pet</span></div>
