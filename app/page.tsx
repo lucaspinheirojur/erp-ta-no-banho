@@ -85,26 +85,27 @@ function NavIcon({ name }: { name: View }) {
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 const displayPrice = (value: number | null) => value === null ? "Valor a definir" : formatCurrency(value);
 
-function serviceIllustrationPosition(name: string) {
+function serviceIllustrationPath(name: string) {
   const normalized = name.toLocaleLowerCase("pt-BR");
-  if (normalized.includes("porte pequeno")) return 0;
-  if (normalized.includes("porte médio")) return 1;
-  if (normalized.includes("porte grande")) return 2;
-  if (normalized.includes("tosa")) return 3;
-  if (normalized.includes("hidratação")) return 4;
-  if (normalized.includes("nós")) return 5;
-  if (normalized.includes("unhas")) return 6;
-  if (normalized.includes("táxi")) return 7;
-  if (normalized.includes("semanal")) return 8;
-  if (normalized.includes("quinzenal")) return 9;
-  return 0;
+  if (normalized.includes("quinzenal")) return "/service-icons/biweekly-package.png";
+  if (normalized.includes("semanal")) return "/service-icons/weekly-package.png";
+  if (normalized.includes("porte pequeno")) return "/service-icons/bath-small.png";
+  if (normalized.includes("porte médio")) return "/service-icons/bath-medium.png";
+  if (normalized.includes("porte grande")) return "/service-icons/bath-large.png";
+  if (normalized.includes("tosa")) return "/service-icons/hygienic-grooming.png";
+  if (normalized.includes("hidratação")) return "/service-icons/hydration.png";
+  if (normalized.includes("nós")) return "/service-icons/detangling.png";
+  if (normalized.includes("unhas")) return "/service-icons/nail-clipping.png";
+  if (normalized.includes("táxi")) return "/service-icons/dog-taxi.png";
+  return "/service-icons/ta-no-banho-mark.png";
 }
 
 function GoldenServiceIllustration({ name }: { name: string }) {
-  const index = serviceIllustrationPosition(name);
-  const column = index % 5;
-  const row = Math.floor(index / 5);
-  return <span className={`golden-service-illustration illustration-${index}`} role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row === 0 ? 20 : 80}%` }} />;
+  return (
+    <span className="golden-service-illustration">
+      <Image src={serviceIllustrationPath(name)} alt={`Golden Retriever representando ${name}`} fill sizes="118px" />
+    </span>
+  );
 }
 
 function formatToday() {
