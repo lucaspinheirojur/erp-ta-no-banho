@@ -43,6 +43,18 @@ type Service = { id: number; name: string; category: string; duration: string; p
 type PackagePlan = { id: number; name: string; sessions: number; periodicity: string; validityDays: number; price: number | null; serviceId: number; courtesy: string; active: boolean };
 type PackageUsage = { id: number; planId: number; clientId?: number; pet: string; client: string; used: number; total: number; startDate?: string; price?: number | null; payment?: Payment };
 type Expense = { id:number; description:string; category:string; amountCents:number; expenseDate:string; paymentMethod:string };
+type BookingMode = "open" | "paused" | "management_only";
+type AvailabilityDay = { day:string; enabled:boolean; start:string; end:string; breakStart:string; breakEnd:string };
+
+const initialAvailability: AvailabilityDay[] = [
+  {day:"Segunda-feira",enabled:false,start:"08:30",end:"18:00",breakStart:"12:00",breakEnd:"13:00"},
+  {day:"Terça-feira",enabled:true,start:"10:30",end:"17:30",breakStart:"12:00",breakEnd:"13:00"},
+  {day:"Quarta-feira",enabled:true,start:"10:30",end:"19:30",breakStart:"12:00",breakEnd:"13:00"},
+  {day:"Quinta-feira",enabled:true,start:"09:30",end:"20:30",breakStart:"12:00",breakEnd:"13:00"},
+  {day:"Sexta-feira",enabled:true,start:"09:30",end:"20:30",breakStart:"12:00",breakEnd:"13:00"},
+  {day:"Sábado",enabled:true,start:"08:30",end:"17:30",breakStart:"12:30",breakEnd:"13:30"},
+  {day:"Domingo",enabled:false,start:"08:30",end:"18:00",breakStart:"12:00",breakEnd:"13:00"},
+];
 
 const navItems: { id: View; label: string }[] = [
   { id: "inicio", label: "Visão geral" },
@@ -119,6 +131,12 @@ export default function Home() {
   const [reportMonth,setReportMonth]=useState(()=>new Date().toISOString().slice(0,7));
   const [reportFrom,setReportFrom]=useState(()=>`${new Date().toISOString().slice(0,7)}-01`);
   const [reportTo,setReportTo]=useState(()=>new Date().toISOString().slice(0,10));
+  const [bookingMode,setBookingMode]=useState<BookingMode>("open");
+  const [availabilityDays,setAvailabilityDays]=useState<AvailabilityDay[]>(initialAvailability);
+  const [intervalMinutes,setIntervalMinutes]=useState(15);
+  const [minimumAdvanceHours,setMinimumAdvanceHours]=useState(24);
+  const [savingSchedule,setSavingSchedule]=useState(false);
+  const [savingBookingMode,setSavingBookingMode]=useState(false);
   const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, iso: "", weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
 
   const loadManagementData = async () => {
@@ -154,6 +172,17 @@ export default function Home() {
     });
     return () => window.cancelAnimationFrame(animationFrame);
   }, []);
+
+  useEffect(() => {
+    Promise.all([fetch("/api/availability"),fetch("/api/settings")]).then(async([availabilityResponse,settingsResponse])=>{
+      const availability=await availabilityResponse.json() as {days?:AvailabilityDay[];intervalMinutes?:number;minimumAdvanceHours?:number};
+      const settings=await settingsResponse.json() as {bookingMode?:BookingMode};
+      if(availability.days?.length===7)setAvailabilityDays(availability.days);
+      if(typeof availability.intervalMinutes==="number")setIntervalMinutes(availability.intervalMinutes);
+      if(typeof availability.minimumAdvanceHours==="number")setMinimumAdvanceHours(availability.minimumAdvanceHours);
+      if(settings.bookingMode)setBookingMode(settings.bookingMode);
+    }).catch(()=>setToast("Não foi possível carregar as configurações da agenda."));
+  },[]);
 
   useEffect(() => {
     if (!modal) return;
@@ -321,6 +350,10 @@ export default function Home() {
 
   const addExpense=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);const response=await fetch("/api/finance",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({description:String(data.get("description")),category:String(data.get("category")),amount:Number(data.get("amount")),date:String(data.get("date")),method:String(data.get("method"))})});if(!response.ok){setToast("Não foi possível registrar a despesa.");return;}await loadManagementData();setModal(null);setToast("Despesa registrada no financeiro.");};
 
+  const updateAvailabilityDay=(index:number,field:keyof AvailabilityDay,value:string|boolean)=>setAvailabilityDays(current=>current.map((day,dayIndex)=>dayIndex===index?{...day,[field]:value}:day));
+  const saveSchedule=async()=>{setSavingSchedule(true);try{const response=await fetch("/api/availability",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({days:availabilityDays,intervalMinutes,minimumAdvanceHours})});const result=await response.json() as {error?:string};if(!response.ok)throw new Error(result.error||"Não foi possível salvar");setToast("Horários e regras da agenda foram salvos.");}catch(error){setToast(error instanceof Error?error.message:"Não foi possível salvar a agenda.");}finally{setSavingSchedule(false);}};
+  const changeBookingMode=async(next:BookingMode)=>{setSavingBookingMode(true);try{const response=await fetch("/api/settings",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({bookingMode:next})});const result=await response.json() as {bookingMode?:BookingMode;error?:string};if(!response.ok||!result.bookingMode)throw new Error(result.error||"Não foi possível atualizar");setBookingMode(result.bookingMode);setToast("Situação do aplicativo de agendamento atualizada.");}catch(error){setToast(error instanceof Error?error.message:"Não foi possível atualizar o aplicativo.");}finally{setSavingBookingMode(false);}};
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -397,6 +430,17 @@ export default function Home() {
         {view === "agenda" && (
           <div className="content">
             <section className="page-heading compact"><div><p>ORGANIZAÇÃO DO DIA</p><h1>Agenda</h1><h2>Visualize os horários e confirme cada atendimento.</h2></div><button className="primary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}><span>＋</span> Novo agendamento</button></section>
+            <section className="agenda-settings panel">
+              <div className="agenda-settings-head"><div><small>AGENDAMENTO ON-LINE</small><h3>Abertura do aplicativo</h3><p>Controle como o aplicativo aparece para clientes que desejam reservar.</p></div><span className={`booking-mode-badge ${bookingMode}`}>{bookingMode==="open"?"Agenda aberta":bookingMode==="paused"?"Temporariamente pausada":"Somente gestão"}</span></div>
+              <div className="booking-mode-options">
+                <button disabled={savingBookingMode} className={bookingMode==="open"?"selected":""} onClick={()=>changeBookingMode("open")}><b>Habilitar reservas</b><span>O aplicativo exibe os horários e aceita novos agendamentos.</span></button>
+                <button disabled={savingBookingMode} className={bookingMode==="paused"?"selected":""} onClick={()=>changeBookingMode("paused")}><b>Pausar agenda</b><span>O aplicativo permanece visível, mas informa que a agenda está fechada.</span></button>
+                <button disabled={savingBookingMode} className={bookingMode==="management_only"?"selected":""} onClick={()=>changeBookingMode("management_only")}><b>Desabilitar aplicativo</b><span>Somente a gestão poderá criar novos agendamentos.</span></button>
+              </div>
+              <div className="schedule-heading"><div><small>DISPONIBILIDADE SEMANAL</small><h3>Horários de atendimento</h3></div><button className="secondary-button" disabled={savingSchedule} onClick={saveSchedule}>{savingSchedule?"Salvando...":"Salvar horários"}</button></div>
+              <div className="schedule-table"><div className="schedule-table-head"><span>Dia</span><span>Jornada</span><span>Pausa</span></div>{availabilityDays.map((day,index)=><article key={day.day} className={day.enabled?"":"disabled"}><label className="schedule-toggle"><input type="checkbox" checked={day.enabled} onChange={event=>updateAvailabilityDay(index,"enabled",event.target.checked)}/><i/><span><b>{day.day}</b><small>{day.enabled?"Atendimento ativo":"Não atende"}</small></span></label><div className="schedule-time-pair"><input type="time" value={day.start} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"start",event.target.value)}/><span>até</span><input type="time" value={day.end} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"end",event.target.value)}/></div><div className="schedule-time-pair"><input type="time" value={day.breakStart} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakStart",event.target.value)}/><span>até</span><input type="time" value={day.breakEnd} disabled={!day.enabled} onChange={event=>updateAvailabilityDay(index,"breakEnd",event.target.value)}/></div></article>)}</div>
+              <div className="schedule-rules"><label><span><b>Intervalo entre atendimentos</b><small>Tempo para organizar o espaço entre clientes.</small></span><select value={intervalMinutes} onChange={event=>setIntervalMinutes(Number(event.target.value))}><option value="0">Sem intervalo</option><option value="15">15 minutos</option><option value="30">30 minutos</option></select></label><label><span><b>Antecedência mínima</b><small>Prazo mínimo para uma nova reserva.</small></span><select value={minimumAdvanceHours} onChange={event=>setMinimumAdvanceHours(Number(event.target.value))}><option value="2">2 horas</option><option value="12">12 horas</option><option value="24">24 horas</option><option value="48">48 horas</option></select></label></div>
+            </section>
             <section className="date-selector">
               {days.map((day) => <button key={day.index} onClick={() => setSelectedDay(day.index)} className={selectedDay === day.index ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
             </section>
