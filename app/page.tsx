@@ -103,7 +103,7 @@ function serviceIllustrationPath(name: string) {
 function GoldenServiceIllustration({ name }: { name: string }) {
   return (
     <span className="golden-service-illustration">
-      <Image src={serviceIllustrationPath(name)} alt={`Golden Retriever representando ${name}`} fill sizes="118px" />
+      <Image src={serviceIllustrationPath(name)} alt={`Golden Retriever representando ${name}`} fill sizes="118px" unoptimized />
     </span>
   );
 }
