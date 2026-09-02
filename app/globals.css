@@ -1451,11 +1451,10 @@ button {
 }
 .catalog-visual {
   position: relative;
-  height: 210px;
-  margin: -20px -20px 0;
-  overflow: hidden;
-  border-radius: 19px 19px 15px 15px;
-  background: #e9f6f5;
+  height: 70px;
+  margin: 0;
+  overflow: visible;
+  background: transparent;
 }
 .golden-service-illustration {
   position: absolute;
@@ -1511,13 +1510,22 @@ button {
 }
 .catalog-visual .catalog-status {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 7px;
+  right: 0;
   z-index: 1;
   box-shadow: 0 4px 14px rgb(4 72 77 / 16%);
 }
 .package-visual {
-  height: 230px;
+  height: 74px;
+}
+.catalog-visual .golden-service-illustration {
+  inset: 0 auto auto 0;
+  width: 70px;
+  height: 70px;
+  border: 1px solid #cce7e6;
+  border-radius: 18px;
+  background-color: #e9f6f5;
+  box-shadow: 0 7px 20px rgb(7 131 140 / 12%);
 }
 .catalog-icon,
 .package-icon {
