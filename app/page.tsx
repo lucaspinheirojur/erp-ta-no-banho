@@ -32,7 +32,7 @@ type Appointment = {
   client: string;
   service: string;
   duration: string;
-  status: "confirmado" | "aguardando" | "concluido";
+  status: "confirmado" | "aguardando" | "concluido" | "bloqueado";
   color: string;
   price: number | null;
   payment?: Payment;
@@ -106,7 +106,7 @@ function getDays() {
 }
 
 function StatusPill({ status }: { status: Appointment["status"] }) {
-  const labels = { confirmado: "Confirmado", aguardando: "Aguardando", concluido: "Concluído" };
+  const labels = { confirmado: "Confirmado", aguardando: "Aguardando", concluido: "Concluído", bloqueado: "Bloqueado" };
   return <span className={`status status-${status}`}><i />{labels[status]}</span>;
 }
 
@@ -119,8 +119,9 @@ export default function Home() {
   const [packageUsage, setPackageUsage] = useState<PackageUsage[]>([]);
   const [expenses,setExpenses]=useState<Expense[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
+  const [selectedDate,setSelectedDate]=useState(()=>getDays()[0].iso);
   const [agendaView,setAgendaView]=useState<"dia"|"semana"|"mes">("dia");
-  const [modal, setModal] = useState<"client" | "appointment" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | "expense" | null>(null);
+  const [modal, setModal] = useState<"client" | "appointment" | "block" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | "expense" | null>(null);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
   const [editingPackageId, setEditingPackageId] = useState<number | null>(null);
   const [paymentAppointmentId, setPaymentAppointmentId] = useState<number | null>(null);
@@ -161,7 +162,7 @@ export default function Home() {
     const today = new Date().toISOString().slice(0, 10);
     setAppointments((appointmentData.appointments ?? []).map((item: { id:number; appointmentDate:string; appointmentTime:string; petName:string; clientName:string; service:string; status:string; priceCents:number; paidCents:number; paymentMethod:string }) => {
       const offset = Math.round((new Date(`${item.appointmentDate}T12:00:00`).getTime() - new Date(`${today}T12:00:00`).getTime()) / 86400000);
-      return { id:item.id, day:offset, date:item.appointmentDate, time:item.appointmentTime, pet:item.petName || "Pet não informado", breed:"", client:item.clientName, phone:(item as {phone?:string}).phone, service:item.service, duration:"1h", status:item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:palette[item.id % palette.length], price:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
+      const blocked=item.status==="blocked";return { id:item.id, day:offset, date:item.appointmentDate, time:item.appointmentTime, pet:blocked?"Agenda bloqueada":item.petName || "Pet não informado", breed:"", client:blocked?"Período indisponível":item.clientName, phone:(item as {phone?:string}).phone, service:blocked?item.service.replace("__BLOCKED__:",""):item.service, duration:"1h", status:blocked?"bloqueado":item.status === "completed" ? "concluido" : item.status === "confirmed" ? "confirmado" : "aguardando", color:blocked?"#8b9ca0":palette[item.id % palette.length], price:blocked?null:item.priceCents / 100, payment:item.paidCents > 0 ? { method:(item.paymentMethod || "PIX") as Payment["method"], amount:item.paidCents / 100, paidAt:"Registrado" } : undefined };
     }));
     const mappedServices: Service[] = (serviceData.services ?? []).map((item: { id:number; name:string; group:string; duration:string; price:number; detail:string; active:boolean }) => ({ id:item.id, name:item.name, category:item.group, duration:item.duration, price:item.price, description:item.detail, active:item.active, color:palette[item.id % palette.length] }));
     setServices(mappedServices);
@@ -206,7 +207,8 @@ export default function Home() {
   }, [toast]);
 
   const todayAppointments = appointments.filter((item) => item.day === 0);
-  const selectedAppointments = appointments.filter((item) => item.day === selectedDay).sort((a, b) => a.time.localeCompare(b.time));
+  const selectedAppointments = appointments.filter((item) => item.date === selectedDate).sort((a, b) => a.time.localeCompare(b.time));
+  const selectedDateLabel=new Intl.DateTimeFormat("pt-BR",{weekday:"long",day:"2-digit",month:"long"}).format(new Date(`${selectedDate}T12:00:00`));
   const filteredClients = clients.filter((client) => `${client.name} ${client.pet} ${client.breed}`.toLowerCase().includes(search.toLowerCase()));
   const selectedPaymentAppointment = appointments.find((item) => item.id === paymentAppointmentId);
   const selectedPackage = packages.find((item) => item.id === selectedPackageId);
@@ -262,15 +264,18 @@ export default function Home() {
     const selected = clients.find((client) => client.id === Number(data.get("client"))) ?? clients[0];
     const service = services.find((item) => item.id === Number(data.get("service"))) ?? services[0];
     const typedPrice = String(data.get("price") || "").trim();
-    const day = Number(data.get("day"));
-    const response = await fetch("/api/appointments", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ type:"appointment", name:selected.name, phone:selected.phone, service:service.name, date:days[day]?.iso, time:String(data.get("time")), priceCents:Math.round(Number(typedPrice || service.price || 0) * 100) }) });
+    const date=String(data.get("date"));
+    const response = await fetch("/api/appointments", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ type:"appointment", name:selected.name, phone:selected.phone, service:service.name, date, time:String(data.get("time")), priceCents:Math.round(Number(typedPrice || service.price || 0) * 100) }) });
     const result=await response.json(); if(!response.ok){setToast(result.error || "Não foi possível agendar.");return;}
-    await loadManagementData(); setSelectedDay(day);
+    await loadManagementData(); setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);
     setModal(null);
     setBookingServiceId(null);
     setToast(`Horário de ${selected.pet} adicionado à agenda.`);
     goTo("agenda");
   };
+
+  const blockSchedule=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);const date=String(data.get("date"));const response=await fetch("/api/appointments",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"block",date,time:String(data.get("time")),end:String(data.get("end")),reason:String(data.get("reason")||"Indisponível")})});const result=await response.json();if(!response.ok){setToast(result.error||"Não foi possível bloquear o período.");return;}await loadManagementData();setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);setAgendaView("dia");setModal(null);setToast("Período bloqueado na agenda.");};
+  const openAgendaDate=(date:string)=>{setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);setAgendaView("dia");};
 
   const openServiceBooking = (serviceId: number) => {
     setBookingServiceId(serviceId);
@@ -445,19 +450,19 @@ export default function Home() {
 
         {view === "agenda" && (
           <div className="content">
-            <section className="page-heading compact"><div><p>ORGANIZAÇÃO DO DIA</p><h1>Agenda</h1><h2>Visualize os horários e confirme cada atendimento.</h2></div><button className="primary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}><span>＋</span> Novo agendamento</button></section>
+            <section className="page-heading compact"><div><p>ORGANIZAÇÃO DO DIA</p><h1>Agenda</h1><h2>Visualize os horários e confirme cada atendimento.</h2></div><div className="agenda-heading-actions"><button className="secondary-button" onClick={()=>setModal("block")}>⊘ Bloquear período</button><button className="primary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}><span>＋</span> Novo agendamento</button></div></section>
             <section className="agenda-view-toolbar panel"><div className="agenda-view-switch">{([['dia','Dia'],['semana','Semana'],['mes','Mês']] as const).map(([value,label])=><button key={value} className={agendaView===value?"selected":""} onClick={()=>setAgendaView(value)}>{label}</button>)}</div><strong>{agendaView==="mes"?monthTitle:"Próximos atendimentos"}</strong></section>
             {agendaView==="dia"&&<><section className="date-selector">
-              {days.map((day) => <button key={day.index} onClick={() => setSelectedDay(day.index)} className={selectedDay === day.index ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
+              {days.map((day) => <button key={day.index} onClick={() => {setSelectedDay(day.index);setSelectedDate(day.iso)}} className={selectedDate === day.iso ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
             </section>
-            {selectedDay === 0 && <section className="payment-summary" aria-label="Resumo dos pagamentos do dia">
+            {selectedDate === days[0].iso && <section className="payment-summary" aria-label="Resumo dos pagamentos do dia">
               <div><small>PREVISTO</small><strong>{formatCurrency(expectedToday)}</strong></div>
               <div className="received"><small>RECEBIDO</small><strong>{formatCurrency(receivedToday)}</strong></div>
               <div className="pending"><small>A RECEBER</small><strong>{formatCurrency(pendingToday)}</strong></div>
               <button onClick={() => goTo("financeiro")}>Abrir financeiro <span>→</span></button>
             </section>}
             <section className="panel agenda-panel">
-              <div className="agenda-title"><div><small>{days[selectedDay].weekday}, {days[selectedDay].day} de {days[selectedDay].month}</small><h3>{selectedAppointments.length} atendimentos</h3></div><div className="legend"><span><i className="dot-confirmed" /> Confirmado</span><span><i className="dot-waiting" /> Aguardando</span><span><i className="dot-paid" /> Pago</span></div></div>
+              <div className="agenda-title"><div><small>{selectedDateLabel}</small><h3>{selectedAppointments.length} compromissos</h3></div><div className="legend"><span><i className="dot-confirmed" /> Confirmado</span><span><i className="dot-waiting" /> Aguardando</span><span><i className="dot-paid" /> Pago</span></div></div>
               {selectedAppointments.length ? (
                 <div className="agenda-list">
                   {selectedAppointments.map((item) => (
@@ -466,7 +471,7 @@ export default function Home() {
                       <div className="pet-avatar large" style={{ background: `${item.color}20`, color: item.color }}>{item.pet.slice(0, 1)}</div>
                       <div className="agenda-info"><strong>{item.pet}<small>{item.breed}</small></strong><p>{item.service}<span>•</span> {displayPrice(item.price)} <span>•</span> Tutor(a): {item.client}</p></div><StatusPill status={item.status} />
                       <div className="agenda-actions">
-                        {item.payment ? <span className="payment-pill">✓ Pago · {item.payment.method}</span> : <button className="payment-button" onClick={() => openPayment(item.id)}>Confirmar pagamento</button>}
+                        {item.status!=="bloqueado"&&(item.payment ? <span className="payment-pill">✓ Pago · {item.payment.method}</span> : <button className="payment-button" onClick={() => openPayment(item.id)}>Confirmar pagamento</button>)}
                         {item.status === "aguardando" && <button className="confirm-button" onClick={() => confirmAppointment(item.id)}>Confirmar</button>}
                       </div>
                     </article>
@@ -474,8 +479,8 @@ export default function Home() {
                 </div>
               ) : <div className="empty-state"><span>🐶</span><h3>Dia livre por aqui</h3><p>Adicione um atendimento para começar a organizar este dia.</p><button className="secondary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}>＋ Novo agendamento</button></div>}
             </section></>}
-            {agendaView==="semana"&&<section className="week-calendar">{days.map(day=><article key={day.index}><header><b>{day.index===0?"Hoje":day.weekday}</b><small>{day.day} {day.month}</small></header>{appointments.filter(item=>item.day===day.index).sort((a,b)=>a.time.localeCompare(b.time)).map(item=><button key={item.id} onClick={()=>{setSelectedDay(day.index);setAgendaView("dia")}}><time>{item.time}</time><b>{item.pet}</b><span>{item.service}</span></button>)}{!appointments.some(item=>item.day===day.index)&&<p>Sem atendimentos</p>}</article>)}</section>}
-            {agendaView==="mes"&&<section className="month-calendar panel"><div className="month-weekdays">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(day=><b key={day}>{day}</b>)}</div><div className="month-cells">{monthCells.map((day,index)=>day===null?<i key={`empty-${index}`}/>:<article key={day}><strong>{day}</strong>{appointments.filter(item=>item.date===`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`).slice(0,3).map(item=><span key={item.id}>{item.time} · {item.pet}</span>)}</article>)}</div></section>}
+            {agendaView==="semana"&&<section className="week-calendar">{days.map(day=><article key={day.index} role="button" tabIndex={0} onClick={()=>openAgendaDate(day.iso)} onKeyDown={event=>{if(event.key==="Enter"||event.key===" ")openAgendaDate(day.iso)}}><header><b>{day.index===0?"Hoje":day.weekday}</b><small>{day.day} {day.month}</small></header>{appointments.filter(item=>item.day===day.index).sort((a,b)=>a.time.localeCompare(b.time)).map(item=><div className="week-event" key={item.id}><time>{item.time}</time><b>{item.pet}</b><span>{item.service}</span></div>)}{!appointments.some(item=>item.day===day.index)&&<p>Sem atendimentos</p>}</article>)}</section>}
+            {agendaView==="mes"&&<section className="month-calendar panel"><div className="month-weekdays">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(day=><b key={day}>{day}</b>)}</div><div className="month-cells">{monthCells.map((day,index)=>day===null?<i key={`empty-${index}`}/>:<button key={day} onClick={()=>openAgendaDate(`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`)}><strong>{day}</strong>{appointments.filter(item=>item.date===`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`).slice(0,3).map(item=><span key={item.id}>{item.time} · {item.pet}</span>)}</button>)}</div></section>}
           </div>
         )}
 
@@ -588,7 +593,9 @@ export default function Home() {
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(null)}>
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" onClick={() => setModal(null)} aria-label="Fechar">×</button>
-            {modal === "expense" ? (
+            {modal === "block" ? (
+              <form onSubmit={blockSchedule}><div className="modal-icon calendar">⊘</div><small>INDISPONIBILIDADE</small><h2 id="modal-title">Bloquear período</h2><p>Reserve um intervalo para pausa, compromisso ou indisponibilidade.</p><div className="form-grid"><label className="full">Motivo<input name="reason" required placeholder="Ex.: Almoço, manutenção ou compromisso"/></label><label className="full">Data<input name="date" type="date" required defaultValue={selectedDate}/></label><label>Horário inicial<input name="time" type="time" required defaultValue="12:00"/></label><label>Horário final<input name="end" type="time" required defaultValue="13:00"/></label></div><div className="modal-actions"><button type="button" onClick={()=>setModal(null)}>Cancelar</button><button type="submit" className="primary-button">Bloquear agenda</button></div></form>
+            ) : modal === "expense" ? (
               <form onSubmit={addExpense}><div className="modal-icon payment">−</div><small>NOVA SAÍDA</small><h2 id="modal-title">Registrar despesa</h2><p>Inclua uma saída para manter o saldo operacional correto.</p><div className="form-grid"><label className="full">Descrição<input name="description" required placeholder="Ex.: Produtos de higiene"/></label><label>Categoria<input name="category" required placeholder="Ex.: Insumos"/></label><label>Valor<input name="amount" type="number" min="0.01" step="0.01" required/></label><label>Data<input name="date" type="date" required defaultValue={new Date().toISOString().slice(0,10)}/></label><label>Forma de pagamento<select name="method"><option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option></select></label></div><div className="modal-actions"><button type="button" onClick={()=>setModal(null)}>Cancelar</button><button type="submit" className="primary-button">Salvar despesa</button></div></form>
             ) : modal === "client" ? (
               <form onSubmit={addClient}>
@@ -606,7 +613,7 @@ export default function Home() {
                 <div className="modal-icon calendar">□</div><small>NOVO HORÁRIO</small><h2 id="modal-title">Agendar atendimento</h2><p>Escolha o pet, o serviço e o melhor horário.</p>
                 <div className="form-grid">
                   <label className="full">Cliente e pet<select name="client" required>{clients.map((client) => <option key={client.id} value={client.id}>{client.pet} · {client.name}</option>)}</select></label>
-                  <label>Dia<select name="day" defaultValue={selectedDay}>{days.map((day) => <option key={day.index} value={day.index}>{day.index === 0 ? "Hoje" : day.weekday}, {day.day}/{day.month}</option>)}</select></label><label>Horário<input type="time" name="time" required defaultValue="09:00" /></label>
+                  <label>Data<input name="date" type="date" required defaultValue={selectedDate}/></label><label>Horário<input type="time" name="time" required defaultValue="09:00" /></label>
                   <label className="full">Serviço<select name="service" defaultValue={bookingServiceId ?? services.find((service) => service.active)?.id}>{services.filter((service) => service.active).map((service) => <option key={service.id} value={service.id}>{service.name} · {displayPrice(service.price)}</option>)}</select></label>
                   <label className="full">Valor do atendimento (opcional)<input name="price" type="number" min="0" step="0.01" placeholder="Deixe em branco para definir depois" /></label>
                 </div>
