@@ -153,7 +153,7 @@ export default function Home() {
       fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"), fetch("/api/packages"),fetch("/api/finance"),
     ]);
     if ([clientsResponse, appointmentsResponse, servicesResponse, packagesResponse,financeResponse].some((response) => response.status === 403)) {
-      setToast("Entre com a conta administrativa para carregar os dados reais.");
+      window.location.assign("/login?returnTo=/gestao");
       return;
     }
     const [clientData, appointmentData, serviceData, packageData,financeData] = await Promise.all([

@@ -1,10 +1,32 @@
 import { and, asc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { clients, packageContracts, packagePlans } from "../../../db/schema";
+import { clients, packageContracts, packagePlans, services } from "../../../db/schema";
 import { getManager } from "../../../lib/auth";
+import { serviceCatalog } from "../../service-catalog";
+
+async function syncOfficialPackages(organizationId:string){
+  const db=getDb();
+  const official=serviceCatalog.filter(item=>item.category==="fidelidade");
+  for(const item of official){
+    await db.insert(services).values({organizationId,name:item.name,groupName:item.group,category:item.category,detail:item.detail,duration:item.duration,priceCents:Math.round(item.price*100),sessions:item.sessions,visitsJson:item.visits?JSON.stringify(item.visits):null,active:true}).onConflictDoNothing({target:[services.organizationId,services.name]});
+  }
+  const [existingPlans,serviceRows]=await Promise.all([
+    db.select({name:packagePlans.name}).from(packagePlans).where(eq(packagePlans.organizationId,organizationId)),
+    db.select().from(services).where(eq(services.organizationId,organizationId)),
+  ]);
+  const registered=new Set(existingPlans.map(item=>item.name));
+  for(const item of official){
+    if(registered.has(item.name))continue;
+    const service=serviceRows.find(row=>row.name===item.name);
+    if(!service)continue;
+    const quinzenal=/quinzen/i.test(item.name);
+    await db.insert(packagePlans).values({organizationId,name:item.name,sessions:item.sessions,periodicity:quinzenal?"Quinzenal":"Semanal",validityDays:quinzenal?70:35,priceCents:Math.round(item.price*100),serviceId:service.id,courtesy:"Sem cortesia",active:true});
+  }
+}
 
 export async function GET() {
   const manager=await getManager(); if(!manager) return Response.json({error:"Acesso não autorizado"},{status:403});
+  await syncOfficialPackages(manager.organizationId);
   const [plans,contracts,clientRows]=await Promise.all([
     getDb().select().from(packagePlans).where(eq(packagePlans.organizationId,manager.organizationId)).orderBy(asc(packagePlans.id)),
     getDb().select().from(packageContracts).where(eq(packageContracts.organizationId,manager.organizationId)).orderBy(asc(packageContracts.id)),
