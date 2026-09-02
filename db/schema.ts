@@ -181,3 +181,32 @@ export const expenses = sqliteTable(
   },
   (table) => [index("idx_expenses_date").on(table.expenseDate)],
 );
+
+export const packagePlans = sqliteTable("package_plans", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: text("organization_id").notNull().default("ta-no-banho").references(() => organizations.id),
+  name: text("name").notNull(),
+  sessions: integer("sessions").notNull(),
+  periodicity: text("periodicity").notNull(),
+  validityDays: integer("validity_days").notNull(),
+  priceCents: integer("price_cents"),
+  serviceId: integer("service_id").notNull().references(() => services.id),
+  courtesy: text("courtesy").notNull().default("Sem cortesia"),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const packageContracts = sqliteTable("package_contracts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  organizationId: text("organization_id").notNull().default("ta-no-banho").references(() => organizations.id),
+  planId: integer("plan_id").notNull().references(() => packagePlans.id),
+  clientId: integer("client_id").notNull().references(() => clients.id),
+  petName: text("pet_name").notNull(),
+  usedSessions: integer("used_sessions").notNull().default(0),
+  totalSessions: integer("total_sessions").notNull(),
+  startDate: text("start_date").notNull(),
+  priceCents: integer("price_cents"),
+  paidCents: integer("paid_cents").notNull().default(0),
+  paymentMethod: text("payment_method"),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, table => [index("idx_package_contracts_org_client").on(table.organizationId, table.clientId)]);

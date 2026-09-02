@@ -8,6 +8,13 @@
       "when": 1788266591422,
       "tag": "0000_mean_spirit",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1788272258513,
+      "tag": "0001_special_mole_man",
+      "breakpoints": true
     }
   ]
 }

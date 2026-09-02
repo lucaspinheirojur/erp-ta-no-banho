@@ -110,15 +110,16 @@ export default function Home() {
   const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, iso: "", weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
 
   const loadManagementData = async () => {
-    const [clientsResponse, appointmentsResponse, servicesResponse] = await Promise.all([
-      fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"),
+    const palette = ["#ef5aa5", "#0a9eaa", "#08747d", "#f177b4", "#18b8c2"];
+    const [clientsResponse, appointmentsResponse, servicesResponse, packagesResponse] = await Promise.all([
+      fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"), fetch("/api/packages"),
     ]);
-    if ([clientsResponse, appointmentsResponse, servicesResponse].some((response) => response.status === 403)) {
+    if ([clientsResponse, appointmentsResponse, servicesResponse, packagesResponse].some((response) => response.status === 403)) {
       setToast("Entre com a conta administrativa para carregar os dados reais.");
       return;
     }
-    const [clientData, appointmentData, serviceData] = await Promise.all([
-      clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(),
+    const [clientData, appointmentData, serviceData, packageData] = await Promise.all([
+      clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(), packagesResponse.json(),
     ]);
     setClients((clientData.clients ?? []).map((item: { id:number; name:string; phone:string; notes?:string; pets?:Array<{name:string;breed?:string;size:string;notes?:string}> }) => { const pet=item.pets?.[0]; return { id:item.id, name:item.name, phone:item.phone, pet:pet?.name || "Pet não informado", breed:pet?.breed || "Não informada", size:pet?.size || "Não informado", note:pet?.notes || item.notes || "Sem observações", color:palette[item.id % palette.length] }; }));
     const today = new Date().toISOString().slice(0, 10);
@@ -128,6 +129,8 @@ export default function Home() {
     }));
     const mappedServices: Service[] = (serviceData.services ?? []).map((item: { id:number; name:string; group:string; duration:string; price:number; detail:string; active:boolean }) => ({ id:item.id, name:item.name, category:item.group, duration:item.duration, price:item.price, description:item.detail, active:item.active, color:palette[item.id % palette.length] }));
     setServices(mappedServices);
+    setPackages((packageData.plans ?? []).map((p: {id:number;name:string;sessions:number;periodicity:string;validityDays:number;price:number|null;serviceId:number;courtesy:string;active:boolean})=>p));
+    setPackageUsage((packageData.contracts ?? []).map((c:{id:number;planId:number;clientId:number;petName:string;client:string;usedSessions:number;totalSessions:number;startDate:string;price:number|null;paid:number;paymentMethod?:string})=>({id:c.id,planId:c.planId,clientId:c.clientId,pet:c.petName,client:c.client,used:c.usedSessions,total:c.totalSessions,startDate:c.startDate,price:c.price,payment:c.paid>0?{method:(c.paymentMethod||"PIX") as Payment["method"],amount:c.paid,paidAt:"Registrado"}:undefined})));
   };
 
   useEffect(() => {
@@ -175,7 +178,6 @@ export default function Home() {
   const addClient = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const palette = ["#ef5aa5", "#0a9eaa", "#08747d", "#f177b4", "#18b8c2"];
     const payload = {
       name: String(data.get("name")),
       phone: String(data.get("phone")),
@@ -219,7 +221,7 @@ export default function Home() {
     setModal("packageContract");
   };
 
-  const contractPackage = (event: FormEvent<HTMLFormElement>) => {
+  const contractPackage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const plan = packages.find((item) => item.id === Number(data.get("planId"))) ?? selectedPackage;
@@ -229,14 +231,8 @@ export default function Home() {
     const price = rawPrice ? Number(rawPrice) : plan.price;
     const paidNow = data.get("paymentStatus") === "Recebido";
     if (paidNow && price === null) { setToast("Informe o valor antes de confirmar o pagamento."); return; }
-    const usage: PackageUsage = {
-      id: Date.now(), planId: plan.id, clientId: client.id, pet: client.pet, client: client.name,
-      used: 0, total: plan.sessions, startDate: String(data.get("startDate")), price,
-      payment: paidNow ? { method: String(data.get("method")) as Payment["method"], amount: Number(rawPrice || price || 0), paidAt: "Agora" } : undefined,
-    };
-    const updated = [usage, ...packageUsage];
-    setPackageUsage(updated);
-    localStorage.setItem("tanobanho-package-usage", JSON.stringify(updated));
+    const response=await fetch("/api/packages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"contract",planId:plan.id,clientId:client.id,petName:client.pet,startDate:String(data.get("startDate")),price,paid:paidNow,method:String(data.get("method")||"PIX")})});
+    if(!response.ok){setToast("Não foi possível contratar o pacote.");return;} await loadManagementData();
     setSelectedPackageId(null);
     setSelectedContractClientId(null);
     setModal(null);
@@ -249,14 +245,12 @@ export default function Home() {
     setModal("packagePayment");
   };
 
-  const registerPackagePayment = (event: FormEvent<HTMLFormElement>) => {
+  const registerPackagePayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!selectedUsage) return;
     const data = new FormData(event.currentTarget);
     const payment: Payment = { method: String(data.get("method")) as Payment["method"], amount: Number(data.get("amount")), paidAt: "Agora" };
-    const updated = packageUsage.map((item) => item.id === selectedUsage.id ? { ...item, price: item.price ?? payment.amount, payment } : item);
-    setPackageUsage(updated);
-    localStorage.setItem("tanobanho-package-usage", JSON.stringify(updated));
+    const response=await fetch("/api/packages",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({type:"payment",id:selectedUsage.id,amount:payment.amount,method:payment.method})});if(!response.ok){setToast("Não foi possível registrar o pagamento.");return;}await loadManagementData();
     setModal(null);
     setSelectedUsageId(null);
     setToast(`Pagamento do pacote de ${selectedUsage.pet} confirmado via ${payment.method}.`);
@@ -269,16 +263,14 @@ export default function Home() {
     setServices(updated); localStorage.setItem("tanobanho-services", JSON.stringify(updated)); setModal(null); setEditingServiceId(null); setToast(`${item.name} foi salvo no catálogo.`); goTo("servicos");
   };
 
-  const savePackage = (event: FormEvent<HTMLFormElement>) => {
+  const savePackage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const data = new FormData(event.currentTarget); const rawPrice = String(data.get("price") || "").trim();
     const item: PackagePlan = { id: editingPackageId ?? Date.now(), name: String(data.get("name")), sessions: Number(data.get("sessions")), periodicity: String(data.get("periodicity")), validityDays: Number(data.get("validityDays")), price: rawPrice ? Number(rawPrice) : null, serviceId: Number(data.get("serviceId")), courtesy: String(data.get("courtesy") || "Sem cortesia"), active: data.get("active") === "on" };
-    const updated = editingPackageId ? packages.map((plan) => plan.id === editingPackageId ? item : plan) : [item, ...packages];
-    setPackages(updated); localStorage.setItem("tanobanho-packages", JSON.stringify(updated)); setModal(null); setEditingPackageId(null); setToast(`${item.name} foi salvo.`); goTo("pacotes");
+    const response=await fetch("/api/packages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(item)});if(!response.ok){setToast("Não foi possível salvar o pacote.");return;}await loadManagementData();setModal(null);setEditingPackageId(null);setToast(`${item.name} foi salvo.`);goTo("pacotes");
   };
 
-  const recordPackageSession = (id: number) => {
-    const updated = packageUsage.map((item) => item.id === id && item.used < item.total ? { ...item, used: item.used + 1 } : item);
-    setPackageUsage(updated); localStorage.setItem("tanobanho-package-usage", JSON.stringify(updated)); setToast("Sessão registrada no pacote.");
+  const recordPackageSession = async (id: number) => {
+    const response=await fetch("/api/packages",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({type:"session",id})});if(!response.ok){setToast("Não foi possível registrar a sessão.");return;}await loadManagementData();setToast("Sessão registrada no pacote.");
   };
 
   const confirmAppointment = async (id: number) => {
