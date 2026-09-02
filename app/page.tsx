@@ -104,7 +104,7 @@ function GoldenServiceIllustration({ name }: { name: string }) {
   const index = serviceIllustrationPosition(name);
   const column = index % 5;
   const row = Math.floor(index / 5);
-  return <span className="golden-service-illustration" role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row * 100}%` }} />;
+  return <span className="golden-service-illustration" role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row === 0 ? 20 : 80}%` }} />;
 }
 
 function formatToday() {

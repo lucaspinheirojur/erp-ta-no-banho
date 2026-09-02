@@ -1451,7 +1451,7 @@ button {
 }
 .catalog-visual {
   position: relative;
-  height: 142px;
+  height: 210px;
   margin: -20px -20px 0;
   overflow: hidden;
   border-radius: 19px 19px 15px 15px;
@@ -1463,7 +1463,7 @@ button {
   display: block;
   background-image: url('/golden-service-processes.png');
   background-repeat: no-repeat;
-  background-size: 500% 200%;
+  background-size: 500% auto;
 }
 .insight-mascot,
 .empty-state-mascot,
@@ -1517,7 +1517,7 @@ button {
   box-shadow: 0 4px 14px rgb(4 72 77 / 16%);
 }
 .package-visual {
-  height: 170px;
+  height: 230px;
 }
 .catalog-icon,
 .package-icon {
