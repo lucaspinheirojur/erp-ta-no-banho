@@ -37,3 +37,9 @@
 .client-shell .payment-preview code{background:#eef9fa!important;color:var(--pet-teal-dark)!important}
 .client-shell .payment-preview button{color:var(--pet-teal-dark)!important}
 .client-shell .booking-rules{background:#f8fcfc!important;color:var(--pet-ink)!important}
+
+/* A mesma escala tipográfica do painel aplicada ao fluxo de reservas. */
+.client-shell,.flow-card{font-family:var(--font-geist-sans),Arial,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.booking-menu-label,.client-shell .kicker,.service-group>.payment-label,.client-shell .payment-label{font-size:12px;font-weight:750;line-height:1.35;letter-spacing:.055em}
+.booking-step-nav span{font-size:13px;font-weight:650;letter-spacing:-.005em}
+.flow-lead,.booking-side-note small,.client-shell small,.client-shell .helper-text{font-weight:500;line-height:1.5;letter-spacing:-.005em}

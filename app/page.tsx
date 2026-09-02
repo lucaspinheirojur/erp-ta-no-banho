@@ -325,7 +325,7 @@ export default function Home() {
     <main className="app-shell">
       <aside className="sidebar">
         <button className="brand" onClick={() => goTo("inicio")} aria-label="Ir para visão geral">
-          <Image className="brand-logo" src="/logo-ta-no-banho.jpeg" alt="Tá no Banho" width={240} height={240} priority />
+          <Image className="brand-logo" src="/logo-ta-no-banho.jpeg" alt="Logomarca Tá no Banho" width={240} height={240} priority unoptimized />
         </button>
         <nav aria-label="Navegação principal">
           <p className="nav-label">MENU</p>
@@ -343,7 +343,7 @@ export default function Home() {
 
       <section className="workspace">
         <header className="topbar">
-          <div className="mobile-brand"><Image src="/logo-ta-no-banho.jpeg" alt="" width={48} height={48} /><strong>Tá no Banho</strong></div>
+          <div className="mobile-brand"><Image src="/logo-ta-no-banho.jpeg" alt="" width={48} height={48} unoptimized /><strong>Tá no Banho</strong></div>
           <div className="top-actions">
             <span className="demo-badge"><i /> Protótipo demonstrativo</span>
             <button className="icon-button" aria-label="Notificações">♢<b>2</b></button>

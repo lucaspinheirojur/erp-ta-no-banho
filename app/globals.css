@@ -99,6 +99,7 @@ button {
   height: 174px;
   object-fit: cover;
   object-position: center 49%;
+  display: block;
   filter: saturate(1.1) contrast(1.04);
   transform: scale(1.06);
 }
@@ -2751,3 +2752,15 @@ th {
 }
 .management-login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#eaf8f9,#fff4fa);color:#173b42}.management-login>section{width:min(440px,100%);padding:34px;border:1px solid #ddecf0;border-radius:24px;background:#fff;box-shadow:0 20px 60px #08747d18;text-align:center}.management-login img{display:block;margin:0 auto 8px;object-fit:contain}.management-login p{margin:0;color:#0a9eaa;font-size:11px;font-weight:800;letter-spacing:.16em}.management-login h1{margin:8px 0;font-size:32px}.management-login>section>span{color:#688389;font-size:14px}.management-login form{display:grid;gap:14px;margin:26px 0 18px;text-align:left}.management-login label{display:grid;gap:6px;font-size:12px;font-weight:750}.management-login input{min-height:48px;padding:12px;border:1px solid #cfe5e8;border-radius:12px;color:#173b42}.management-login form div{padding:10px;border-radius:10px;background:#fff0f8;color:#d7438d;font-size:12px}.management-login button{min-height:50px;border:0;border-radius:12px;background:linear-gradient(135deg,#ef5aa5,#f177b4);color:#fff;font-weight:800;cursor:pointer}.management-login button:disabled{opacity:.6}.management-login a{color:#08747d;font-size:13px;font-weight:700}
 .report-panel{margin-bottom:18px}.report-controls{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.report-controls label{display:grid;gap:6px;color:#688389;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.report-controls input{min-height:42px;padding:9px 11px;border:1px solid #cfe5e8;border-radius:10px;background:#fbfefe;color:#173b42}.report-mode{display:flex;padding:4px;border-radius:12px;background:#eef9fa}.report-mode button{min-height:36px;padding:0 13px;border:0;border-radius:9px;background:transparent;color:#688389;font-weight:750;cursor:pointer}.report-mode button.active{background:#fff;color:#08747d;box-shadow:0 3px 12px #08747d14}.report-downloads{display:flex;gap:8px;margin-left:auto}.report-downloads a{min-height:42px;display:inline-flex;align-items:center;padding:0 15px;border:1px solid #0a9eaa;border-radius:11px;color:#08747d;font-size:12px;font-weight:800;text-decoration:none}.report-downloads a:last-child{border-color:#ef5aa5;background:#fff4fa;color:#d7438d}@media(max-width:700px){.report-controls,.report-downloads{width:100%}.report-controls label{flex:1}.report-controls input{width:100%}.report-downloads{margin-left:0}.report-downloads a{flex:1;justify-content:center}}
+
+/* Hierarquia tipográfica unificada do ERP. */
+:root{--text-secondary:#607a80;--text-tertiary:#74898e;--label-tracking:.055em}
+body{font-weight:450;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.page-heading p,.nav-label,.stat-card small,.panel-head small,.agenda-title>div>small,.insight-strip small,.date-selector small,.finance-stats small,.payment-summary small,.client-detail small,.catalog-meta small,.remaining small,.report-controls label{color:var(--text-tertiary);font-size:12px;font-weight:750;line-height:1.35;letter-spacing:var(--label-tracking);text-transform:uppercase}
+.page-heading p{color:var(--teal-dark)}
+.stat-card small,.panel-head small,.agenda-title>div>small{padding-top:0;letter-spacing:.045em}
+.page-heading h2,.stat-card p,.mini-main span,.finance-panel>p,.insight-strip p,.agenda-info p,.payment-main p,.finance-stats p,.client-toolbar p,.client-card .breed,.client-note,.catalog-card>p,.package-card>p,.usage-main p,.payment-note,.payment-help,.contract-summary span{color:var(--text-secondary);font-size:13.5px;font-weight:500;line-height:1.5;letter-spacing:-.005em}
+.finance-panel>p{margin-top:7px}
+.stat-card p b,.revenue span,.status,.payment-pill,.catalog-status{font-weight:750}
+.panel-head button,.insight-strip button,.payment-summary>button,.catalog-card>button,.package-card>button,.card-actions button,.client-actions button{font-weight:700;letter-spacing:-.01em}
+@media(max-width:700px){.page-heading p,.stat-card small,.panel-head small,.agenda-title>div>small{font-size:11px}.page-heading h2,.stat-card p,.mini-main span,.finance-panel>p,.agenda-info p,.client-note,.catalog-card>p,.package-card>p{font-size:13px}}
