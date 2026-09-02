@@ -13,7 +13,7 @@ function projectUrl(value?: string) {
 
 function credentials() {
   const url = projectUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   if (!url || !key) throw new Error("Supabase não configurado.");
   return { url, key };
 }

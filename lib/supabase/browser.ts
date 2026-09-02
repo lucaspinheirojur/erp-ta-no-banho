@@ -15,14 +15,14 @@ function projectUrl(value?: string) {
 
 export function createSupabaseBrowserClient() {
   const url = projectUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   if (!url || !key) throw new Error("Supabase não configurado.");
   return createBrowserClient(url, key);
 }
 
 export function createSupabaseRecoveryClient() {
   const url = projectUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const key = publicKey(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   if (!url || !key) throw new Error("Supabase não configurado.");
   return createClient(url, key, {
     auth: {
