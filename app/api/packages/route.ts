@@ -26,13 +26,19 @@ async function syncOfficialPackages(organizationId:string){
 
 export async function GET() {
   const manager=await getManager(); if(!manager) return Response.json({error:"Acesso não autorizado"},{status:403});
-  await syncOfficialPackages(manager.organizationId);
-  const [plans,contracts,clientRows]=await Promise.all([
-    getDb().select().from(packagePlans).where(eq(packagePlans.organizationId,manager.organizationId)).orderBy(asc(packagePlans.id)),
-    getDb().select().from(packageContracts).where(eq(packageContracts.organizationId,manager.organizationId)).orderBy(asc(packageContracts.id)),
-    getDb().select().from(clients).where(eq(clients.organizationId,manager.organizationId)),
-  ]);
-  return Response.json({plans:plans.map(p=>({...p,price:p.priceCents===null?null:p.priceCents/100})),contracts:contracts.map(c=>({...c,client:clientRows.find(x=>x.id===c.clientId)?.name||"Cliente",price:c.priceCents===null?null:c.priceCents/100,paid:c.paidCents/100}))});
+  try{
+    await syncOfficialPackages(manager.organizationId);
+    const [plans,contracts,clientRows]=await Promise.all([
+      getDb().select().from(packagePlans).where(eq(packagePlans.organizationId,manager.organizationId)).orderBy(asc(packagePlans.id)),
+      getDb().select().from(packageContracts).where(eq(packageContracts.organizationId,manager.organizationId)).orderBy(asc(packageContracts.id)),
+      getDb().select().from(clients).where(eq(clients.organizationId,manager.organizationId)),
+    ]);
+    return Response.json({plans:plans.map(p=>({...p,price:p.priceCents===null?null:p.priceCents/100})),contracts:contracts.map(c=>({...c,client:clientRows.find(x=>x.id===c.clientId)?.name||"Cliente",price:c.priceCents===null?null:c.priceCents/100,paid:c.paidCents/100}))});
+  }catch(error){
+    const serviceRows=await getDb().select().from(services).where(eq(services.organizationId,manager.organizationId));
+    const plans=serviceCatalog.filter(item=>item.category==="fidelidade").map((item,index)=>{const service=serviceRows.find(row=>row.name===item.name);const quinzenal=/quinzen/i.test(item.name);return{id:-(index+1),name:item.name,sessions:item.sessions,periodicity:quinzenal?"Quinzenal":"Semanal",validityDays:quinzenal?70:35,price:item.price,serviceId:service?.id??0,courtesy:"Sem cortesia",active:true};});
+    return Response.json({plans,contracts:[],warning:error instanceof Error?error.message:"Pacotes carregados em modo de contingência"});
+  }
 }
 
 export async function POST(request:Request){
