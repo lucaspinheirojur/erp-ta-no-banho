@@ -85,6 +85,28 @@ function NavIcon({ name }: { name: View }) {
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 const displayPrice = (value: number | null) => value === null ? "Valor a definir" : formatCurrency(value);
 
+function serviceIllustrationPosition(name: string) {
+  const normalized = name.toLocaleLowerCase("pt-BR");
+  if (normalized.includes("porte pequeno")) return 0;
+  if (normalized.includes("porte médio")) return 1;
+  if (normalized.includes("porte grande")) return 2;
+  if (normalized.includes("tosa")) return 3;
+  if (normalized.includes("hidratação")) return 4;
+  if (normalized.includes("nós")) return 5;
+  if (normalized.includes("unhas")) return 6;
+  if (normalized.includes("táxi")) return 7;
+  if (normalized.includes("semanal")) return 8;
+  if (normalized.includes("quinzenal")) return 9;
+  return 0;
+}
+
+function GoldenServiceIllustration({ name }: { name: string }) {
+  const index = serviceIllustrationPosition(name);
+  const column = index % 5;
+  const row = Math.floor(index / 5);
+  return <span className="golden-service-illustration" role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row * 100}%` }} />;
+}
+
 function formatToday() {
   const localNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const value = new Intl.DateTimeFormat("pt-BR", { weekday: "long", day: "2-digit", month: "long" }).format(localNow);
@@ -449,7 +471,7 @@ export default function Home() {
               </article>
             </section>
             <section className="insight-strip">
-              <div className="insight-icon">💡</div><div><small>OPORTUNIDADE DA SEMANA</small><strong>5 pets estão há mais de 30 dias sem retornar.</strong><p>Um lembrete carinhoso pode ajudar a preencher os horários livres.</p></div>
+              <div className="insight-mascot"><GoldenServiceIllustration name="Hidratação"/></div><div><small>OPORTUNIDADE DA SEMANA</small><strong>5 pets estão há mais de 30 dias sem retornar.</strong><p>Um lembrete carinhoso pode ajudar a preencher os horários livres.</p></div>
               <button onClick={() => setToast("Lista de lembretes preparada para revisão.")}>Ver clientes <span>→</span></button>
             </section>
           </div>
@@ -484,7 +506,7 @@ export default function Home() {
                     </article>
                   ))}
                 </div>
-              ) : <div className="empty-state"><span>🐶</span><h3>Dia livre por aqui</h3><p>Adicione um atendimento para começar a organizar este dia.</p><button className="secondary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}>＋ Novo agendamento</button></div>}
+              ) : <div className="empty-state"><div className="empty-state-mascot"><GoldenServiceIllustration name="Banhos semanais · pequeno"/></div><h3>Dia livre por aqui</h3><p>Adicione um atendimento para começar a organizar este dia.</p><button className="secondary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}>＋ Novo agendamento</button></div>}
             </section></>}
             {agendaView==="semana"&&<section className="week-calendar">{days.map(day=><article key={day.iso} role="button" tabIndex={0} onClick={()=>openAgendaDate(day.iso)} onKeyDown={event=>{if(event.key==="Enter"||event.key===" ")openAgendaDate(day.iso)}}><header><b>{day.iso===todayIso?"Hoje":day.weekday}</b><small>{day.day} {day.month}</small></header>{appointments.filter(item=>item.date===day.iso).sort((a,b)=>a.time.localeCompare(b.time)).map(item=><div className="week-event" key={item.id}><time>{item.time}</time><b>{item.pet}</b><span>{item.service}</span></div>)}{!appointments.some(item=>item.date===day.iso)&&<p>Sem atendimentos</p>}</article>)}</section>}
             {agendaView==="mes"&&<section className="month-calendar panel"><div className="month-weekdays">{["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map(day=><b key={day}>{day}</b>)}</div><div className="month-cells">{monthCells.map((day,index)=>day===null?<i key={`empty-${index}`}/>:<button key={day} onClick={()=>openAgendaDate(`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`)}><strong>{day}</strong>{appointments.filter(item=>item.date===`${currentYear}-${String(currentMonth+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`).slice(0,3).map(item=><span key={item.id}>{item.time} · {item.pet}</span>)}</button>)}</div></section>}
@@ -506,7 +528,7 @@ export default function Home() {
                   <div className="client-actions"><button onClick={() => openPackageContract(packages.find((plan) => plan.active)?.id ?? packages[0].id, client.id)}>Contratar pacote</button><button onClick={() => setToast(`Ficha de ${client.pet} aberta para consulta.`)}>Ver ficha <span>→</span></button></div>
                 </article>
               ))}
-              <button className="add-client-card" onClick={() => setModal("client")}><span>＋</span><strong>Cadastrar novo cliente</strong><small>Adicione tutor e pet em uma única etapa</small></button>
+              <button className="add-client-card client-mascot-card" onClick={() => setModal("client")}><span className="client-card-mascot"><GoldenServiceIllustration name="Banho completo · porte pequeno"/></span><strong>Cadastrar novo cliente</strong><small>Adicione tutor e pet em uma única etapa</small><em>＋ Começar cadastro</em></button>
             </section>
           </div>
         )}
@@ -514,7 +536,7 @@ export default function Home() {
         {view === "configuracoes" && (
           <div className="content"><section className="page-heading compact"><div><p>REGRAS OPERACIONAIS</p><h1>Configurações</h1><h2>Defina a abertura do aplicativo e os horários disponíveis para reservas.</h2></div></section>
             <section className="agenda-settings panel">
-              <div className="agenda-settings-head"><div><small>AGENDAMENTO ON-LINE</small><h3>Abertura do aplicativo</h3><p>Controle como o aplicativo aparece para clientes que desejam reservar.</p></div><span className={`booking-mode-badge ${bookingMode}`}>{bookingMode==="open"?"Agenda aberta":bookingMode==="paused"?"Temporariamente pausada":"Somente gestão"}</span></div>
+              <div className="agenda-settings-head"><div><small>AGENDAMENTO ON-LINE</small><h3>Abertura do aplicativo</h3><p>Controle como o aplicativo aparece para clientes que desejam reservar.</p></div><div className="settings-mascot"><GoldenServiceIllustration name="Banhos quinzenais · pequeno"/></div><span className={`booking-mode-badge ${bookingMode}`}>{bookingMode==="open"?"Agenda aberta":bookingMode==="paused"?"Temporariamente pausada":"Somente gestão"}</span></div>
               <div className="booking-mode-options"><button disabled={savingBookingMode} className={bookingMode==="open"?"selected":""} onClick={()=>changeBookingMode("open")}><b>Habilitar reservas</b><span>Exibe horários e aceita novos agendamentos.</span></button><button disabled={savingBookingMode} className={bookingMode==="paused"?"selected":""} onClick={()=>changeBookingMode("paused")}><b>Pausar agenda</b><span>Mantém o aplicativo visível com a agenda fechada.</span></button><button disabled={savingBookingMode} className={bookingMode==="management_only"?"selected":""} onClick={()=>changeBookingMode("management_only")}><b>Desabilitar aplicativo</b><span>Somente a gestão poderá criar agendamentos.</span></button></div>
               <div className="schedule-heading"><div><small>PAGAMENTOS</small><h3>Cobrança de sinal</h3><p>Quando desabilitada, o pagamento on-line será sempre pelo valor integral.</p></div><div className="deposit-controls"><label className="schedule-toggle"><input type="checkbox" checked={depositEnabled} disabled={savingBookingMode} onChange={event=>changeDepositEnabled(event.target.checked)}/><i/><span><b>{depositEnabled?"Sinal habilitado":"Sinal desabilitado"}</b><small>{depositEnabled?`Cliente pode pagar ${depositPercentage}% para reservar`:"Apenas pagamento integral on-line"}</small></span></label><label className="deposit-percentage"><span>Percentual do sinal</span><div><input type="number" min="1" max="100" value={depositPercentage} disabled={!depositEnabled||savingBookingMode} onChange={event=>setDepositPercentage(Number(event.target.value))}/><b>%</b><button className="secondary-button" disabled={!depositEnabled||savingBookingMode} onClick={saveDepositPercentage}>Salvar</button></div></label></div></div>
               <div className="schedule-heading"><div><small>DISPONIBILIDADE SEMANAL</small><h3>Horários de atendimento</h3></div><button className="secondary-button" disabled={savingSchedule} onClick={saveSchedule}>{savingSchedule?"Salvando...":"Salvar horários"}</button></div>
@@ -527,7 +549,7 @@ export default function Home() {
         {view === "servicos" && (
           <div className="content"><section className="page-heading compact"><div><p>CATÁLOGO</p><h1>Serviços</h1><h2>Cadastre o que o Tá no Banho oferece. Os valores podem ser definidos depois.</h2></div><button className="primary-button" onClick={() => { setEditingServiceId(null); setModal("service"); }}><span>＋</span> Novo serviço</button></section>
             <section className="catalog-grid">{services.map((service) => <article className="catalog-card" key={service.id}>
-              <div className="catalog-top"><span className="catalog-icon" style={{ background: `${service.color}18`, color: service.color }}>✦</span><span className={service.active ? "catalog-status active" : "catalog-status"}>{service.active ? "Ativo" : "Inativo"}</span></div><small>{service.category}</small><h3>{service.name}</h3><p>{service.description}</p>
+              <div className="catalog-visual"><GoldenServiceIllustration name={service.name}/><span className={service.active ? "catalog-status active" : "catalog-status"}>{service.active ? "Ativo" : "Inativo"}</span></div><small>{service.category}</small><h3>{service.name}</h3><p>{service.description}</p>
               <div className="catalog-meta"><span><small>DURAÇÃO</small><strong>{service.duration}</strong></span><span><small>VALOR</small><strong className={service.price === null ? "undefined-price" : ""}>{displayPrice(service.price)}</strong></span></div>
               <div className="card-actions"><button className="contract-button" disabled={!service.active} onClick={() => openServiceBooking(service.id)}>Agendar serviço</button><button onClick={() => { setEditingServiceId(service.id); setModal("service"); }}>Editar</button></div>
             </article>)}<button className="add-client-card catalog-add" onClick={() => { setEditingServiceId(null); setModal("service"); }}><span>＋</span><strong>Cadastrar serviço</strong><small>O preço é opcional</small></button></section>
@@ -537,7 +559,7 @@ export default function Home() {
         {view === "pacotes" && (
           <div className="content"><section className="page-heading compact"><div><p>FIDELIZAÇÃO</p><h1>Pacotes</h1><h2>Organize sessões, validade e benefícios. Preços podem ficar para depois.</h2></div><button className="primary-button" onClick={() => { setEditingPackageId(null); setModal("package"); }}><span>＋</span> Novo pacote</button></section>
             <section className="package-grid">{packages.map((plan) => <article className="package-card" key={plan.id}>
-              <div className="catalog-top"><span className="package-icon">▦</span><span className={plan.active ? "catalog-status active" : "catalog-status"}>{plan.active ? "Disponível" : "Rascunho"}</span></div><h3>{plan.name}</h3><strong className={plan.price === null ? "undefined-price package-price" : "package-price"}>{displayPrice(plan.price)}</strong>
+              <div className="catalog-visual package-visual"><GoldenServiceIllustration name={plan.name}/><span className={plan.active ? "catalog-status active" : "catalog-status"}>{plan.active ? "Disponível" : "Rascunho"}</span></div><h3>{plan.name}</h3><strong className={plan.price === null ? "undefined-price package-price" : "package-price"}>{displayPrice(plan.price)}</strong>
               <div className="package-details"><span><b>{plan.sessions}</b> sessões</span><span><b>{plan.periodicity}</b> periodicidade</span><span><b>{plan.validityDays} dias</b> de validade</span><span><b>{services.find((s) => s.id === plan.serviceId)?.name ?? "Serviço"}</b> incluído</span></div><p>✦ {plan.courtesy}</p>
               <div className="card-actions"><button className="contract-button" disabled={!plan.active} onClick={() => openPackageContract(plan.id)}>Contratar pacote</button><button onClick={() => { setEditingPackageId(plan.id); setModal("package"); }}>Editar</button></div>
             </article>)}</section>

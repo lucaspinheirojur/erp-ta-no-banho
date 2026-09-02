@@ -1449,6 +1449,76 @@ button {
   align-items: center;
   justify-content: space-between;
 }
+.catalog-visual {
+  position: relative;
+  height: 142px;
+  margin: -20px -20px 0;
+  overflow: hidden;
+  border-radius: 19px 19px 15px 15px;
+  background: #e9f6f5;
+}
+.golden-service-illustration {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-image: url('/golden-service-processes.png');
+  background-repeat: no-repeat;
+  background-size: 500% 200%;
+}
+.insight-mascot,
+.empty-state-mascot,
+.client-card-mascot,
+.settings-mascot {
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: #dff4f2;
+}
+.insight-mascot {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgb(7 131 140 / 15%);
+}
+.empty-state-mascot {
+  width: 118px;
+  height: 94px;
+  margin: 0 auto 8px;
+  border-radius: 24px;
+}
+.client-card-mascot {
+  width: calc(100% + 40px);
+  height: 170px;
+  margin: -20px -20px 20px;
+  border-radius: 19px 19px 15px 15px;
+}
+.client-mascot-card > span:first-child {
+  width: calc(100% + 40px);
+  height: 170px;
+}
+.client-mascot-card em {
+  margin-top: 16px;
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+.settings-mascot {
+  width: 94px;
+  height: 74px;
+  margin-left: auto;
+  border-radius: 18px;
+}
+.catalog-visual .catalog-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  box-shadow: 0 4px 14px rgb(4 72 77 / 16%);
+}
+.package-visual {
+  height: 170px;
+}
 .catalog-icon,
 .package-icon {
   width: 42px;
@@ -1476,7 +1546,7 @@ button {
 }
 .catalog-card > small {
   display: block;
-  margin-top: 17px;
+  margin-top: 15px;
   color: #99a5a6;
   font-size: 8px;
   font-weight: 850;
@@ -1536,7 +1606,7 @@ button {
   min-height: 330px;
 }
 .package-card h3 {
-  margin-top: 17px;
+  margin-top: 15px;
 }
 .package-price {
   display: block;
