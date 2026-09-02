@@ -82,28 +82,40 @@ function NavIcon({ name }: { name: View }) {
   return <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
 }
 
+function DashboardIcon({ name }: { name: "appointments" | "revenue" | "clients" | "return" }) {
+  const paths = {
+    appointments: <><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="m9 15 2 2 4-4"/></>,
+    revenue: <><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M7 10h10M7 15h4"/><circle cx="17" cy="15" r="1"/></>,
+    clients: <><circle cx="9" cy="9" r="3"/><path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6"/><path d="M16.5 8.5c1.8-1.9 4.5.7 0 4.2-4.5-3.5-1.8-6.1 0-4.2Z"/></>,
+    return: <><path d="M4 8V4m0 0h4M4 4l4 4"/><path d="M5.5 15a7 7 0 1 0 1-8.5"/><path d="m10 14 2 2 4-5"/></>,
+  };
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
+
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 const displayPrice = (value: number | null) => value === null ? "Valor a definir" : formatCurrency(value);
 
-function serviceIllustrationPath(name: string) {
-  const normalized = name.toLocaleLowerCase("pt-BR");
+function serviceIllustrationPath(name: string, category = "") {
+  const normalized = `${name} ${category}`.toLocaleLowerCase("pt-BR");
   if (normalized.includes("quinzenal")) return "/service-icons/biweekly-package.png";
-  if (normalized.includes("semanal")) return "/service-icons/weekly-package.png";
+  if (normalized.includes("semanal") || normalized.includes("mensal") || normalized.includes("pacote")) return "/service-icons/weekly-package.png";
   if (normalized.includes("porte pequeno")) return "/service-icons/bath-small.png";
   if (normalized.includes("porte médio")) return "/service-icons/bath-medium.png";
   if (normalized.includes("porte grande")) return "/service-icons/bath-large.png";
-  if (normalized.includes("tosa")) return "/service-icons/hygienic-grooming.png";
   if (normalized.includes("hidratação")) return "/service-icons/hydration.png";
-  if (normalized.includes("nós")) return "/service-icons/detangling.png";
+  if (normalized.includes("nós") || normalized.includes("desembolo") || normalized.includes("escova") || normalized.includes("pente")) return "/service-icons/detangling.png";
   if (normalized.includes("unhas")) return "/service-icons/nail-clipping.png";
-  if (normalized.includes("táxi")) return "/service-icons/dog-taxi.png";
+  if (normalized.includes("táxi") || normalized.includes("taxi") || normalized.includes("transporte")) return "/service-icons/dog-taxi.png";
+  if (normalized.includes("tosa") || normalized.includes("higiênica") || normalized.includes("higienica") || normalized.includes("cuidados")) return "/service-icons/hygienic-grooming.png";
+  if (normalized.includes("banho")) return "/service-icons/bath-medium.png";
+  if (normalized.includes("adicional")) return "/service-icons/hydration.png";
   return "/service-icons/ta-no-banho-mark.png";
 }
 
-function GoldenServiceIllustration({ name }: { name: string }) {
+function GoldenServiceIllustration({ name, category }: { name: string; category?: string }) {
   return (
     <span className="golden-service-illustration">
-      <Image src={serviceIllustrationPath(name)} alt={`Golden Retriever representando ${name}`} fill sizes="118px" unoptimized />
+      <Image src={serviceIllustrationPath(name, category)} alt={`Golden Retriever representando ${name}`} fill sizes="118px" unoptimized />
     </span>
   );
 }
@@ -444,10 +456,10 @@ export default function Home() {
               <button className="secondary-button" onClick={() => setModal("client")}><span>＋</span> Cadastrar cliente e pet</button>
             </section>
             <section className="stats-grid" aria-label="Indicadores">
-              <article className="stat-card coral"><span className="stat-icon">▣</span><div><small>ATENDIMENTOS HOJE</small><strong>{todayAppointments.length}</strong><p><b>{todayAppointments.length-yesterdayAppointments>=0?"+":""}{todayAppointments.length-yesterdayAppointments}</b> em relação a ontem</p></div></article>
-              <article className="stat-card teal"><span className="stat-icon">R$</span><div><small>PREVISÃO DO DIA</small><strong>{formatCurrency(expectedToday)}</strong><p>Já recebido: <b>{formatCurrency(receivedToday)}</b></p></div></article>
-              <article className="stat-card violet"><span className="stat-icon">♡</span><div><small>CLIENTES ATIVOS</small><strong>{clients.length}</strong><p><b>{newClientsThisMonth} novos</b> neste mês</p></div></article>
-              <article className="stat-card yellow"><span className="stat-icon">◎</span><div><small>TAXA DE RETORNO</small><strong>{returnRate}%</strong><p>Clientes com mais de um atendimento</p></div></article>
+              <article className="stat-card coral"><span className="stat-icon"><DashboardIcon name="appointments" /></span><div><small>ATENDIMENTOS HOJE</small><strong>{todayAppointments.length}</strong><p><b>{todayAppointments.length-yesterdayAppointments>=0?"+":""}{todayAppointments.length-yesterdayAppointments}</b> em relação a ontem</p></div></article>
+              <article className="stat-card teal"><span className="stat-icon"><DashboardIcon name="revenue" /></span><div><small>PREVISÃO DO DIA</small><strong>{formatCurrency(expectedToday)}</strong><p>Já recebido: <b>{formatCurrency(receivedToday)}</b></p></div></article>
+              <article className="stat-card violet"><span className="stat-icon"><DashboardIcon name="clients" /></span><div><small>CLIENTES ATIVOS</small><strong>{clients.length}</strong><p><b>{newClientsThisMonth} novos</b> neste mês</p></div></article>
+              <article className="stat-card yellow"><span className="stat-icon"><DashboardIcon name="return" /></span><div><small>TAXA DE RETORNO</small><strong>{returnRate}%</strong><p>Clientes com mais de um atendimento</p></div></article>
             </section>
             <section className="dashboard-grid">
               <article className="panel schedule-panel">
@@ -550,7 +562,7 @@ export default function Home() {
         {view === "servicos" && (
           <div className="content"><section className="page-heading compact"><div><p>CATÁLOGO</p><h1>Serviços</h1><h2>Cadastre o que o Tá no Banho oferece. Os valores podem ser definidos depois.</h2></div><button className="primary-button" onClick={() => { setEditingServiceId(null); setModal("service"); }}><span>＋</span> Novo serviço</button></section>
             <section className="catalog-grid">{services.map((service) => <article className="catalog-card" key={service.id}>
-              <div className="catalog-visual"><GoldenServiceIllustration name={service.name}/><span className={service.active ? "catalog-status active" : "catalog-status"}>{service.active ? "Ativo" : "Inativo"}</span></div><small>{service.category}</small><h3>{service.name}</h3><p>{service.description}</p>
+              <div className="catalog-visual"><GoldenServiceIllustration name={service.name} category={service.category}/><span className={service.active ? "catalog-status active" : "catalog-status"}>{service.active ? "Ativo" : "Inativo"}</span></div><small>{service.category}</small><h3>{service.name}</h3><p>{service.description}</p>
               <div className="catalog-meta"><span><small>DURAÇÃO</small><strong>{service.duration}</strong></span><span><small>VALOR</small><strong className={service.price === null ? "undefined-price" : ""}>{displayPrice(service.price)}</strong></span></div>
               <div className="card-actions"><button className="contract-button" disabled={!service.active} onClick={() => openServiceBooking(service.id)}>Agendar serviço</button><button onClick={() => { setEditingServiceId(service.id); setModal("service"); }}>Editar</button></div>
             </article>)}<button className="add-client-card catalog-add" onClick={() => { setEditingServiceId(null); setModal("service"); }}><span>＋</span><strong>Cadastrar serviço</strong><small>O preço é opcional</small></button></section>
@@ -658,6 +670,7 @@ export default function Home() {
                   <label>Duração<input name="duration" required defaultValue={editingService?.duration ?? "1h"} placeholder="Ex.: 1h" /></label>
                   <label className="full">Valor (opcional)<input name="price" type="number" min="0" step="0.01" defaultValue={editingService?.price ?? ""} placeholder="Deixe em branco para definir depois" /></label>
                   <label className="full">Descrição<input name="description" defaultValue={editingService?.description} placeholder="O que está incluído?" /></label>
+                  <p className="context-icon-note">O ícone será escolhido automaticamente de acordo com o nome e a categoria do serviço.</p>
                   <label className="check-label"><input name="active" type="checkbox" defaultChecked={editingService?.active ?? true} /> Serviço ativo</label>
                 </div><div className="modal-actions"><button type="button" onClick={() => setModal(null)}>Cancelar</button><button type="submit" className="primary-button">Salvar serviço</button></div>
               </form>

@@ -415,6 +415,22 @@ button {
   font-size: 14px;
   font-weight: 800;
 }
+.stat-icon svg {
+  width: 23px;
+  height: 23px;
+}
+.context-icon-note {
+  grid-column: 1 / -1;
+  margin: -3px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid #d8ecea;
+  border-radius: 11px;
+  background: #f1f9f8;
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
 .stat-card small {
   display: block;
   padding-top: 2px;
