@@ -44,15 +44,28 @@ type PackagePlan = { id: number; name: string; sessions: number; periodicity: st
 type PackageUsage = { id: number; planId: number; clientId?: number; pet: string; client: string; used: number; total: number; startDate?: string; price?: number | null; payment?: Payment };
 type Expense = { id:number; description:string; category:string; amountCents:number; expenseDate:string; paymentMethod:string };
 
-const navItems: { id: View; label: string; icon: string }[] = [
-  { id: "inicio", label: "Visão geral", icon: "⌂" },
-  { id: "agenda", label: "Agenda", icon: "□" },
-  { id: "clientes", label: "Clientes & pets", icon: "♧" },
-  { id: "servicos", label: "Serviços", icon: "✂" },
-  { id: "pacotes", label: "Pacotes", icon: "▦" },
-  { id: "financeiro", label: "Financeiro", icon: "$" },
-  { id: "analises", label: "Análises", icon: "⌁" },
+const navItems: { id: View; label: string }[] = [
+  { id: "inicio", label: "Visão geral" },
+  { id: "agenda", label: "Agenda" },
+  { id: "clientes", label: "Clientes & pets" },
+  { id: "servicos", label: "Serviços" },
+  { id: "pacotes", label: "Pacotes" },
+  { id: "financeiro", label: "Financeiro" },
+  { id: "analises", label: "Análises" },
 ];
+
+function NavIcon({ name }: { name: View }) {
+  const paths: Record<View, React.ReactNode> = {
+    inicio: <><path d="M3 11 12 3l9 8" /><path d="M5 10v10h14V10" /><path d="M9 20v-6h6v6" /></>,
+    agenda: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" /></>,
+    clientes: <><circle cx="8" cy="8" r="2" /><circle cx="16" cy="8" r="2" /><circle cx="5" cy="13" r="2" /><circle cx="19" cy="13" r="2" /><path d="M12 12c-3 0-6 3-6 6 0 2 2 3 4 2l2-1 2 1c2 1 4 0 4-2 0-3-3-6-6-6Z" /></>,
+    servicos: <><circle cx="6" cy="7" r="3" /><circle cx="6" cy="17" r="3" /><path d="m8.7 8.4 12.3 6.1M8.7 15.6 21 9.5" /></>,
+    pacotes: <><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5Z" /><path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.2l8 4.5" /></>,
+    financeiro: <><circle cx="12" cy="12" r="9" /><path d="M16 8.5c-.7-.9-2-1.5-4-1.5-2.2 0-4 1.1-4 3s1.5 2.7 4 3 4 1.1 4 3-1.8 3-4 3c-2 0-3.5-.7-4.2-1.7M12 5v14" /></>,
+    analises: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /><path d="m4 7 6-4 6 7 5-5" /></>,
+  };
+  return <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+}
 
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
 const displayPrice = (value: number | null) => value === null ? "Valor a definir" : formatCurrency(value);
@@ -318,15 +331,11 @@ export default function Home() {
           <p className="nav-label">MENU</p>
           {navItems.map((item) => (
             <button key={item.id} className={view === item.id ? "nav-item active" : "nav-item"} onClick={() => goTo(item.id)}>
-              <span className="nav-icon" aria-hidden="true">{item.icon}</span>{item.label}
+              <NavIcon name={item.id} />{item.label}
               {item.id === "agenda" && <em>{appointments.filter((a) => a.day === 0).length}</em>}
             </button>
           ))}
         </nav>
-        <div className="sidebar-card">
-          <span className="spark">✦</span><strong>Meta do fim de semana</strong><p>8 de 12 atendimentos</p>
-          <div className="progress"><i /></div><small>Faltam 4 para bater a meta</small>
-        </div>
         <div className="profile">
           <span>LP</span><div><strong>Lucas Pinheiro</strong><small>Administrador</small></div><button aria-label="Opções do perfil">•••</button>
         </div>
@@ -342,7 +351,7 @@ export default function Home() {
           </div>
         </header>
         <nav className="mobile-nav" aria-label="Navegação mobile">
-          {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => goTo(item.id)}>{item.icon}<small>{item.label}</small></button>)}
+          {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} onClick={() => goTo(item.id)}><NavIcon name={item.id} /><small>{item.label}</small></button>)}
         </nav>
 
         {view === "inicio" && (
