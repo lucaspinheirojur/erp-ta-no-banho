@@ -21,6 +21,15 @@ type Input = {
 function hasFullName(value = "") {
   return value.trim().split(/\s+/).filter(Boolean).length >= 2;
 }
+function timeMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+function durationMinutes(value = "1h") {
+  const hours = value.match(/(\d+(?:[.,]\d+)?)\s*h/i);
+  const minutes = value.match(/(\d+)\s*min/i);
+  return Math.round((hours ? Number(hours[1].replace(",", ".")) * 60 : 0) + (minutes ? Number(minutes[1]) : 0)) || 60;
+}
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +38,7 @@ export async function POST(request: Request) {
       phone = data.phone?.trim(),
       petName = data.petName?.trim(),
       service = data.service?.trim();
+    const normalizedPhone = phone?.replace(/\D/g, "") ?? "";
     const dates = Array.isArray(data.dates)
       ? [...new Set(data.dates)].sort()
       : [];
@@ -43,7 +53,7 @@ export async function POST(request: Request) {
       ? await db
           .select()
           .from(services)
-          .where(and(eq(services.name, service), eq(services.active, true)))
+          .where(and(eq(services.organizationId, ORGANIZATION_ID), eq(services.name, service), eq(services.active, true)))
           .limit(1)
       : [];
     const storedService = stored[0];
@@ -76,7 +86,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     if (
-      !phone ||
+      normalizedPhone.length < 10 ||
       !petName ||
       !service ||
       !selectedService ||
@@ -137,24 +147,35 @@ export async function POST(request: Request) {
       .where(
         and(
           eq(appointments.status, "awaiting_payment"),
+          eq(appointments.organizationId, ORGANIZATION_ID),
           lt(appointments.createdAt, paymentHoldLimit),
         ),
       );
-    for (const date of dates) {
-      const occupied = await db
-        .select({ id: appointments.id })
+    const serviceRows = await db.select().from(services).where(eq(services.organizationId, ORGANIZATION_ID));
+    const visits = visitsFor(selectedService);
+    for (const [index, date] of dates.entries()) {
+      const scheduled = await db
+        .select()
         .from(appointments)
         .where(
           and(
+            eq(appointments.organizationId, ORGANIZATION_ID),
             eq(appointments.appointmentDate, date),
-            eq(appointments.appointmentTime, data.timesByDate![date]),
             ne(appointments.status, "cancelled"),
           ),
-        )
-        .limit(1);
-      if (occupied.length)
+        );
+      const requestedStart = timeMinutes(data.timesByDate![date]);
+      const requestedEnd = requestedStart + durationMinutes(visits[index]?.duration ?? selectedService.duration);
+      const occupied = scheduled.some((item) => {
+        const existingStart = timeMinutes(item.appointmentTime);
+        const blockedEnd = item.status === "blocked" ? item.externalReference?.split(":")[1] : undefined;
+        const existingService = serviceRows.find((entry) => entry.name === item.service.split(" — ")[0]);
+        const existingEnd = blockedEnd ? timeMinutes(blockedEnd) : existingStart + durationMinutes(existingService?.duration);
+        return requestedStart < existingEnd && requestedEnd > existingStart;
+      });
+      if (occupied)
         return Response.json(
-          { error: `O horário de ${date} já foi reservado` },
+          { error: `O período escolhido em ${date} já está ocupado` },
           { status: 409 },
         );
     }
@@ -169,8 +190,6 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     const baseSessionCents = Math.floor(totalCents / dates.length);
-    const visits = visitsFor(selectedService);
-    const normalizedPhone = phone.replace(/\D/g, "");
     await db
       .insert(clients)
       .values({
