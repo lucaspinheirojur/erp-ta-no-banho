@@ -40,16 +40,7 @@ type Appointment = {
 type Service = { id: number; name: string; category: string; duration: string; price: number | null; description: string; active: boolean; color: string };
 type PackagePlan = { id: number; name: string; sessions: number; periodicity: string; validityDays: number; price: number | null; serviceId: number; courtesy: string; active: boolean };
 type PackageUsage = { id: number; planId: number; clientId?: number; pet: string; client: string; used: number; total: number; startDate?: string; price?: number | null; payment?: Payment };
-
-const initialPackages: PackagePlan[] = [
-  { id: 1, name: "Banhos semanais", sessions: 4, periodicity: "Semanal", validityDays: 35, price: null, serviceId: 1, courtesy: "1 corte de unhas", active: true },
-  { id: 2, name: "Banhos quinzenais", sessions: 4, periodicity: "Quinzenal", validityDays: 70, price: null, serviceId: 1, courtesy: "Hidratação na última sessão", active: true },
-  { id: 3, name: "Pacote personalizado", sessions: 3, periodicity: "Personalizada", validityDays: 60, price: null, serviceId: 1, courtesy: "Benefícios a combinar", active: false },
-];
-const initialPackageUsage: PackageUsage[] = [
-  { id: 1, planId: 1, clientId: 1, pet: "Pet Exemplo 1", client: "Cliente Exemplo 1", used: 2, total: 4, startDate: "2026-08-02", price: 240, payment: { method: "PIX", amount: 240, paidAt: "02/08, 10:12" } },
-  { id: 2, planId: 2, clientId: 2, pet: "Pet Exemplo 2", client: "Cliente Exemplo 2", used: 3, total: 4, startDate: "2026-06-20", price: 260 },
-];
+type Expense = { id:number; description:string; category:string; amountCents:number; expenseDate:string; paymentMethod:string };
 
 const navItems: { id: View; label: string; icon: string }[] = [
   { id: "inicio", label: "Visão geral", icon: "⌂" },
@@ -93,10 +84,11 @@ export default function Home() {
   const [clients, setClients] = useState<Client[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [packages, setPackages] = useState<PackagePlan[]>(initialPackages);
-  const [packageUsage, setPackageUsage] = useState<PackageUsage[]>(initialPackageUsage);
+  const [packages, setPackages] = useState<PackagePlan[]>([]);
+  const [packageUsage, setPackageUsage] = useState<PackageUsage[]>([]);
+  const [expenses,setExpenses]=useState<Expense[]>([]);
   const [selectedDay, setSelectedDay] = useState(0);
-  const [modal, setModal] = useState<"client" | "appointment" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | null>(null);
+  const [modal, setModal] = useState<"client" | "appointment" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | "expense" | null>(null);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
   const [editingPackageId, setEditingPackageId] = useState<number | null>(null);
   const [paymentAppointmentId, setPaymentAppointmentId] = useState<number | null>(null);
@@ -111,15 +103,15 @@ export default function Home() {
 
   const loadManagementData = async () => {
     const palette = ["#ef5aa5", "#0a9eaa", "#08747d", "#f177b4", "#18b8c2"];
-    const [clientsResponse, appointmentsResponse, servicesResponse, packagesResponse] = await Promise.all([
-      fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"), fetch("/api/packages"),
+    const [clientsResponse, appointmentsResponse, servicesResponse, packagesResponse,financeResponse] = await Promise.all([
+      fetch("/api/clients"), fetch("/api/appointments"), fetch("/api/services?management=1"), fetch("/api/packages"),fetch("/api/finance"),
     ]);
-    if ([clientsResponse, appointmentsResponse, servicesResponse, packagesResponse].some((response) => response.status === 403)) {
+    if ([clientsResponse, appointmentsResponse, servicesResponse, packagesResponse,financeResponse].some((response) => response.status === 403)) {
       setToast("Entre com a conta administrativa para carregar os dados reais.");
       return;
     }
-    const [clientData, appointmentData, serviceData, packageData] = await Promise.all([
-      clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(), packagesResponse.json(),
+    const [clientData, appointmentData, serviceData, packageData,financeData] = await Promise.all([
+      clientsResponse.json(), appointmentsResponse.json(), servicesResponse.json(), packagesResponse.json(),financeResponse.json(),
     ]);
     setClients((clientData.clients ?? []).map((item: { id:number; name:string; phone:string; notes?:string; pets?:Array<{name:string;breed?:string;size:string;notes?:string}> }) => { const pet=item.pets?.[0]; return { id:item.id, name:item.name, phone:item.phone, pet:pet?.name || "Pet não informado", breed:pet?.breed || "Não informada", size:pet?.size || "Não informado", note:pet?.notes || item.notes || "Sem observações", color:palette[item.id % palette.length] }; }));
     const today = new Date().toISOString().slice(0, 10);
@@ -131,6 +123,7 @@ export default function Home() {
     setServices(mappedServices);
     setPackages((packageData.plans ?? []).map((p: {id:number;name:string;sessions:number;periodicity:string;validityDays:number;price:number|null;serviceId:number;courtesy:string;active:boolean})=>p));
     setPackageUsage((packageData.contracts ?? []).map((c:{id:number;planId:number;clientId:number;petName:string;client:string;usedSessions:number;totalSessions:number;startDate:string;price:number|null;paid:number;paymentMethod?:string})=>({id:c.id,planId:c.planId,clientId:c.clientId,pet:c.petName,client:c.client,used:c.usedSessions,total:c.totalSessions,startDate:c.startDate,price:c.price,payment:c.paid>0?{method:(c.paymentMethod||"PIX") as Payment["method"],amount:c.paid,paidAt:"Registrado"}:undefined})));
+    setExpenses(financeData.expenses??[]);
   };
 
   useEffect(() => {
@@ -167,6 +160,7 @@ export default function Home() {
   const totalReceived = appointments.reduce((total, item) => total + (item.payment?.amount ?? 0), 0);
   const packageReceived = packageUsage.reduce((total, item) => total + (item.payment?.amount ?? 0), 0);
   const packagePending = packageUsage.reduce((total, item) => total + (item.payment ? 0 : (item.price ?? packages.find((plan) => plan.id === item.planId)?.price ?? 0)), 0);
+  const totalExpenses=expenses.reduce((total,item)=>total+item.amountCents/100,0);
   const editingService = services.find((item) => item.id === editingServiceId);
   const editingPackage = packages.find((item) => item.id === editingPackageId);
 
@@ -256,17 +250,17 @@ export default function Home() {
     setToast(`Pagamento do pacote de ${selectedUsage.pet} confirmado via ${payment.method}.`);
   };
 
-  const saveService = (event: FormEvent<HTMLFormElement>) => {
+  const saveService = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const data = new FormData(event.currentTarget); const rawPrice = String(data.get("price") || "").trim();
     const item: Service = { id: editingServiceId ?? Date.now(), name: String(data.get("name")), category: String(data.get("category")), duration: String(data.get("duration")), price: rawPrice ? Number(rawPrice) : null, description: String(data.get("description") || ""), active: data.get("active") === "on", color: editingService?.color ?? ["#20a390", "#ff7b63", "#7b8de5", "#d69b2a"][services.length % 4] };
-    const updated = editingServiceId ? services.map((serviceItem) => serviceItem.id === editingServiceId ? item : serviceItem) : [item, ...services];
-    setServices(updated); localStorage.setItem("tanobanho-services", JSON.stringify(updated)); setModal(null); setEditingServiceId(null); setToast(`${item.name} foi salvo no catálogo.`); goTo("servicos");
+    const method=editingServiceId?"PATCH":"POST";const payload=editingServiceId?{id:editingServiceId,name:item.name,group:item.category,detail:item.description,duration:item.duration,price:item.price,active:item.active}:{name:item.name,group:item.category,category:"avulso",detail:item.description,duration:item.duration,price:item.price,sessions:1};
+    const response=await fetch("/api/services",{method,headers:{"content-type":"application/json"},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok){setToast(result.error||"Não foi possível salvar o serviço.");return;}await loadManagementData();setModal(null);setEditingServiceId(null);setToast(`${item.name} foi salvo no catálogo.`);goTo("servicos");
   };
 
   const savePackage = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); const data = new FormData(event.currentTarget); const rawPrice = String(data.get("price") || "").trim();
     const item: PackagePlan = { id: editingPackageId ?? Date.now(), name: String(data.get("name")), sessions: Number(data.get("sessions")), periodicity: String(data.get("periodicity")), validityDays: Number(data.get("validityDays")), price: rawPrice ? Number(rawPrice) : null, serviceId: Number(data.get("serviceId")), courtesy: String(data.get("courtesy") || "Sem cortesia"), active: data.get("active") === "on" };
-    const response=await fetch("/api/packages",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(item)});if(!response.ok){setToast("Não foi possível salvar o pacote.");return;}await loadManagementData();setModal(null);setEditingPackageId(null);setToast(`${item.name} foi salvo.`);goTo("pacotes");
+    const response=await fetch("/api/packages",{method:editingPackageId?"PATCH":"POST",headers:{"content-type":"application/json"},body:JSON.stringify(editingPackageId?{...item,type:"plan"}:item)});if(!response.ok){setToast("Não foi possível salvar o pacote.");return;}await loadManagementData();setModal(null);setEditingPackageId(null);setToast(`${item.name} foi salvo.`);goTo("pacotes");
   };
 
   const recordPackageSession = async (id: number) => {
@@ -299,6 +293,8 @@ export default function Home() {
     setPaymentAppointmentId(null);
     setToast(`Pagamento de ${selectedPaymentAppointment.pet} confirmado via ${payment.method}.`);
   };
+
+  const addExpense=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);const response=await fetch("/api/finance",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({description:String(data.get("description")),category:String(data.get("category")),amount:Number(data.get("amount")),date:String(data.get("date")),method:String(data.get("method"))})});if(!response.ok){setToast("Não foi possível registrar a despesa.");return;}await loadManagementData();setModal(null);setToast("Despesa registrada no financeiro.");};
 
   return (
     <main className="app-shell">
@@ -460,12 +456,12 @@ export default function Home() {
           <div className="content">
             <section className="page-heading compact">
               <div><p>CONTROLE DE RECEBIMENTOS</p><h1>Financeiro</h1><h2>Registre pagamentos e acompanhe o que entrou e o que ainda falta receber.</h2></div>
-              <button className="secondary-button" onClick={() => goTo("agenda")}>Ir para agenda <span>→</span></button>
+              <button className="secondary-button" onClick={() => setModal("expense")}>＋ Registrar despesa</button>
             </section>
             <section className="finance-stats" aria-label="Resumo financeiro">
               <article><span className="finance-icon green">✓</span><div><small>RECEBIDO HOJE</small><strong>{formatCurrency(receivedToday)}</strong><p>{todayAppointments.filter((item) => item.payment).length} pagamentos registrados</p></div></article>
               <article><span className="finance-icon amber">↗</span><div><small>A RECEBER HOJE</small><strong>{formatCurrency(pendingToday)}</strong><p>{todayAppointments.filter((item) => !item.payment).length} atendimentos pendentes</p></div></article>
-              <article><span className="finance-icon blue">R$</span><div><small>RECEBIDO NO PROTÓTIPO</small><strong>{formatCurrency(totalReceived + packageReceived)}</strong><p>Serviços e pacotes confirmados</p></div></article>
+              <article><span className="finance-icon blue">R$</span><div><small>SALDO OPERACIONAL</small><strong>{formatCurrency(totalReceived + packageReceived-totalExpenses)}</strong><p>{formatCurrency(totalExpenses)} em despesas registradas</p></div></article>
             </section>
             <section className="panel payments-panel">
               <div className="panel-head"><div><small>ATENDIMENTOS</small><h3>Pagamentos e pendências</h3></div><span className="payment-help">Registre o recebimento na linha do pet</span></div>
@@ -499,7 +495,9 @@ export default function Home() {
         <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(null)}>
           <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <button className="modal-close" onClick={() => setModal(null)} aria-label="Fechar">×</button>
-            {modal === "client" ? (
+            {modal === "expense" ? (
+              <form onSubmit={addExpense}><div className="modal-icon payment">−</div><small>NOVA SAÍDA</small><h2 id="modal-title">Registrar despesa</h2><p>Inclua uma saída para manter o saldo operacional correto.</p><div className="form-grid"><label className="full">Descrição<input name="description" required placeholder="Ex.: Produtos de higiene"/></label><label>Categoria<input name="category" required placeholder="Ex.: Insumos"/></label><label>Valor<input name="amount" type="number" min="0.01" step="0.01" required/></label><label>Data<input name="date" type="date" required defaultValue={new Date().toISOString().slice(0,10)}/></label><label>Forma de pagamento<select name="method"><option>PIX</option><option>Dinheiro</option><option>Cartão de débito</option><option>Cartão de crédito</option></select></label></div><div className="modal-actions"><button type="button" onClick={()=>setModal(null)}>Cancelar</button><button type="submit" className="primary-button">Salvar despesa</button></div></form>
+            ) : modal === "client" ? (
               <form onSubmit={addClient}>
                 <div className="modal-icon">🐾</div><small>NOVO CADASTRO</small><h2 id="modal-title">Cliente e pet</h2><p>Registre os dados essenciais para personalizar o atendimento.</p>
                 <div className="form-grid">

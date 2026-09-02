@@ -28,6 +28,7 @@ export async function POST(request:Request){
 
 export async function PATCH(request:Request){
   const manager=await getManager(); if(!manager)return Response.json({error:"Acesso não autorizado"},{status:403}); const body=await request.json() as Record<string,unknown>;
+  if(body.type==="plan"){await getDb().update(packagePlans).set({name:String(body.name),sessions:Number(body.sessions),periodicity:String(body.periodicity),validityDays:Number(body.validityDays),priceCents:body.price===null?null:Math.round(Number(body.price)*100),serviceId:Number(body.serviceId),courtesy:String(body.courtesy||"Sem cortesia"),active:body.active!==false}).where(and(eq(packagePlans.id,Number(body.id)),eq(packagePlans.organizationId,manager.organizationId)));return Response.json({updated:true});}
   if(body.type==="session"){const row=(await getDb().select().from(packageContracts).where(and(eq(packageContracts.id,Number(body.id)),eq(packageContracts.organizationId,manager.organizationId))).limit(1))[0];if(!row)return Response.json({error:"Contrato não encontrado"},{status:404});await getDb().update(packageContracts).set({usedSessions:Math.min(row.totalSessions,row.usedSessions+1)}).where(eq(packageContracts.id,row.id));}
   if(body.type==="payment")await getDb().update(packageContracts).set({paidCents:Math.round(Number(body.amount)*100),paymentMethod:String(body.method)}).where(and(eq(packageContracts.id,Number(body.id)),eq(packageContracts.organizationId,manager.organizationId)));
   return Response.json({updated:true});
