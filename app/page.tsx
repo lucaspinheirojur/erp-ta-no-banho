@@ -118,9 +118,9 @@ export default function Home() {
   const [packages, setPackages] = useState<PackagePlan[]>([]);
   const [packageUsage, setPackageUsage] = useState<PackageUsage[]>([]);
   const [expenses,setExpenses]=useState<Expense[]>([]);
-  const [selectedDay, setSelectedDay] = useState(0);
   const [selectedDate,setSelectedDate]=useState(()=>getDays()[0].iso);
   const [agendaView,setAgendaView]=useState<"dia"|"semana"|"mes">("dia");
+  const [agendaMonth,setAgendaMonth]=useState(()=>{const now=new Date();return new Date(now.getFullYear(),now.getMonth(),1)});
   const [modal, setModal] = useState<"client" | "appointment" | "block" | "payment" | "service" | "package" | "packageContract" | "packagePayment" | "expense" | null>(null);
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null);
   const [editingPackageId, setEditingPackageId] = useState<number | null>(null);
@@ -227,12 +227,14 @@ export default function Home() {
   const reportQuery=new URLSearchParams(reportMode==="month"?{mode:"month",month:reportMonth}:{mode:"custom",from:reportFrom,to:reportTo}).toString();
   const editingService = services.find((item) => item.id === editingServiceId);
   const editingPackage = packages.find((item) => item.id === editingPackageId);
-  const currentMonthDate=new Date();
+  const currentMonthDate=agendaMonth;
   const currentYear=currentMonthDate.getFullYear(),currentMonth=currentMonthDate.getMonth();
   const monthStartOffset=new Date(currentYear,currentMonth,1).getDay();
   const monthLength=new Date(currentYear,currentMonth+1,0).getDate();
   const monthCells=Array.from({length:monthStartOffset+monthLength},(_,index)=>index<monthStartOffset?null:index-monthStartOffset+1);
   const monthTitle=new Intl.DateTimeFormat("pt-BR",{month:"long",year:"numeric"}).format(currentMonthDate);
+  const changeAgendaMonth=(offset:number)=>setAgendaMonth(current=>new Date(current.getFullYear(),current.getMonth()+offset,1));
+  const resetAgendaMonth=()=>{const now=new Date();setAgendaMonth(new Date(now.getFullYear(),now.getMonth(),1));};
 
   const goTo = (next: View) => {
     setView(next);
@@ -267,15 +269,15 @@ export default function Home() {
     const date=String(data.get("date"));
     const response = await fetch("/api/appointments", { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({ type:"appointment", name:selected.name, phone:selected.phone, service:service.name, date, time:String(data.get("time")), priceCents:Math.round(Number(typedPrice || service.price || 0) * 100) }) });
     const result=await response.json(); if(!response.ok){setToast(result.error || "Não foi possível agendar.");return;}
-    await loadManagementData(); setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);
+    await loadManagementData(); setSelectedDate(date);
     setModal(null);
     setBookingServiceId(null);
     setToast(`Horário de ${selected.pet} adicionado à agenda.`);
     goTo("agenda");
   };
 
-  const blockSchedule=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);const date=String(data.get("date"));const response=await fetch("/api/appointments",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"block",date,time:String(data.get("time")),end:String(data.get("end")),reason:String(data.get("reason")||"Indisponível")})});const result=await response.json();if(!response.ok){setToast(result.error||"Não foi possível bloquear o período.");return;}await loadManagementData();setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);setAgendaView("dia");setModal(null);setToast("Período bloqueado na agenda.");};
-  const openAgendaDate=(date:string)=>{setSelectedDate(date);setSelectedDay(days.find(day=>day.iso===date)?.index??0);setAgendaView("dia");};
+  const blockSchedule=async(event:FormEvent<HTMLFormElement>)=>{event.preventDefault();const data=new FormData(event.currentTarget);const date=String(data.get("date"));const response=await fetch("/api/appointments",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({type:"block",date,time:String(data.get("time")),end:String(data.get("end")),reason:String(data.get("reason")||"Indisponível")})});const result=await response.json();if(!response.ok){setToast(result.error||"Não foi possível bloquear o período.");return;}await loadManagementData();setSelectedDate(date);setAgendaView("dia");setModal(null);setToast("Período bloqueado na agenda.");};
+  const openAgendaDate=(date:string)=>{setSelectedDate(date);setAgendaView("dia");};
 
   const openServiceBooking = (serviceId: number) => {
     setBookingServiceId(serviceId);
@@ -451,9 +453,9 @@ export default function Home() {
         {view === "agenda" && (
           <div className="content">
             <section className="page-heading compact"><div><p>ORGANIZAÇÃO DO DIA</p><h1>Agenda</h1><h2>Visualize os horários e confirme cada atendimento.</h2></div><div className="agenda-heading-actions"><button className="secondary-button" onClick={()=>setModal("block")}>⊘ Bloquear período</button><button className="primary-button" onClick={() => { setBookingServiceId(null); setModal("appointment"); }}><span>＋</span> Novo agendamento</button></div></section>
-            <section className="agenda-view-toolbar panel"><div className="agenda-view-switch">{([['dia','Dia'],['semana','Semana'],['mes','Mês']] as const).map(([value,label])=><button key={value} className={agendaView===value?"selected":""} onClick={()=>setAgendaView(value)}>{label}</button>)}</div><strong>{agendaView==="mes"?monthTitle:"Próximos atendimentos"}</strong></section>
+            <section className="agenda-view-toolbar panel"><div className="agenda-view-switch">{([['dia','Dia'],['semana','Semana'],['mes','Mês']] as const).map(([value,label])=><button key={value} className={agendaView===value?"selected":""} onClick={()=>setAgendaView(value)}>{label}</button>)}</div>{agendaView==="mes"?<div className="month-navigation"><button onClick={()=>changeAgendaMonth(-1)} aria-label="Mês anterior">‹</button><button className="month-today" onClick={resetAgendaMonth}>Hoje</button><strong>{monthTitle}</strong><button onClick={()=>changeAgendaMonth(1)} aria-label="Próximo mês">›</button></div>:<strong>Próximos atendimentos</strong>}</section>
             {agendaView==="dia"&&<><section className="date-selector">
-              {days.map((day) => <button key={day.index} onClick={() => {setSelectedDay(day.index);setSelectedDate(day.iso)}} className={selectedDate === day.iso ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
+              {days.map((day) => <button key={day.index} onClick={() => setSelectedDate(day.iso)} className={selectedDate === day.iso ? "selected" : ""}><small>{day.index === 0 ? "Hoje" : day.weekday}</small><strong>{day.day}</strong><span>{day.month}</span></button>)}
             </section>
             {selectedDate === days[0].iso && <section className="payment-summary" aria-label="Resumo dos pagamentos do dia">
               <div><small>PREVISTO</small><strong>{formatCurrency(expectedToday)}</strong></div>
