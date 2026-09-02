@@ -83,28 +83,27 @@ button {
 }
 .brand {
   width: 100%;
-  height: 214px;
+  height: 190px;
+  flex: 0 0 190px;
   display: grid;
   place-items: center;
-  margin-bottom: 0;
+  margin-bottom: 12px;
   padding: 0;
-  overflow: visible;
+  overflow: hidden;
   border: 0;
   border-radius: 18px;
   background: #fff;
   cursor: pointer;
   position: relative;
-  z-index: 2;
 }
 .brand-logo {
   width: 230px;
   height: auto;
   position: absolute;
-  top: -55px;
+  top: -90px;
   left: 50%;
   object-fit: contain;
   display: block;
-  clip-path: inset(0 0 108px 0);
   filter: saturate(1.1) contrast(1.04);
   transform: translateX(-50%);
 }
@@ -2769,3 +2768,6 @@ body{font-weight:450;-webkit-font-smoothing:antialiased;text-rendering:optimizeL
 .stat-card p b,.revenue span,.status,.payment-pill,.catalog-status{font-weight:750}
 .panel-head button,.insight-strip button,.payment-summary>button,.catalog-card>button,.package-card>button,.card-actions button,.client-actions button{font-weight:700;letter-spacing:-.01em}
 @media(max-width:700px){.page-heading p,.stat-card small,.panel-head small,.agenda-title>div>small{font-size:11px}.page-heading h2,.stat-card p,.mini-main span,.finance-panel>p,.agenda-info p,.client-note,.catalog-card>p,.package-card>p{font-size:13px}}
+
+.stat-card p{white-space:normal;overflow-wrap:anywhere}
+@media(min-width:761px) and (max-width:1400px){.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
