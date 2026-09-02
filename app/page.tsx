@@ -397,7 +397,7 @@ export default function Home() {
           ))}
         </nav>
         <div className="profile">
-          <span>LP</span><div><strong>Lucas Pinheiro</strong><small>Administrador</small></div><button aria-label="Opções do perfil">•••</button>
+          <span>LP</span><div><strong>Lucas Pinheiro</strong><small>Administrador</small></div><form action="/api/auth/logout" method="post"><button className="logout-button" type="submit" aria-label="Sair da plataforma"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg><span>Sair</span></button></form>
         </div>
       </aside>
 

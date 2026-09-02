@@ -203,6 +203,7 @@ button {
   color: #9aa7a8;
   cursor: pointer;
 }
+.profile form{margin:0}.profile .logout-button{display:flex;align-items:center;gap:5px;padding:7px 8px;border-radius:9px;color:#71858a;font-size:10px;font-weight:750;transition:.18s}.profile .logout-button:hover,.profile .logout-button:focus-visible{background:#fff0f7;color:var(--pink-dark);outline:none}.profile .logout-button svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.profile .logout-button span{display:inline}
 
 .workspace {
   flex: 1;
