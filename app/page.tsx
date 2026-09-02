@@ -147,6 +147,10 @@ export default function Home() {
   const [savingBookingMode,setSavingBookingMode]=useState(false);
   const [days, setDays] = useState(() => Array.from({ length: 5 }, (_, index) => ({ index, iso: "", weekday: index === 0 ? "Hoje" : "—", day: "--", month: "" })));
 
+  useEffect(()=>{
+    if(window.location.pathname==="/")window.location.replace("/gestao");
+  },[]);
+
   const loadManagementData = async () => {
     const palette = ["#ef5aa5", "#0a9eaa", "#08747d", "#f177b4", "#18b8c2"];
     const [clientsResponse, appointmentsResponse, servicesResponse, packagesResponse,financeResponse] = await Promise.all([
