@@ -170,6 +170,7 @@ export default function BookingFlow() {
   const [paymentError, setPaymentError] = useState("");
   const [, setCashEnabled] = useState(true);
   const [depositEnabled, setDepositEnabled] = useState(true);
+  const [depositPercentage, setDepositPercentage] = useState(50);
   const [bookingNow] = useState(() => Date.now());
   const [bookingReference, setBookingReference] = useState("");
   const [acceptedRules, setAcceptedRules] = useState(false);
@@ -182,7 +183,7 @@ export default function BookingFlow() {
     serviceCatalog[0];
   const groups = [...new Set(categoryServices.map((item) => item.group))];
   const totalPrice = service.price;
-  const deposit = totalPrice * 0.5;
+  const deposit = totalPrice * (depositPercentage / 100);
   const amount =
     method === "cash" ? 0 : paymentOption === "full" ? totalPrice : deposit;
   const balance = totalPrice - amount;
@@ -244,7 +245,7 @@ export default function BookingFlow() {
   useEffect(() => {
     fetch("/api/settings")
       .then((response) => response.json())
-      .then((data: { cashEnabled?: boolean; depositEnabled?: boolean }) => {
+      .then((data: { cashEnabled?: boolean; depositEnabled?: boolean; depositPercentage?: number }) => {
         if (typeof data.cashEnabled === "boolean") {
           setCashEnabled(data.cashEnabled);
           document.body.classList.toggle("cash-disabled", !data.cashEnabled);
@@ -255,6 +256,7 @@ export default function BookingFlow() {
           setDepositEnabled(data.depositEnabled);
           if (!data.depositEnabled) setPaymentOption("full");
         }
+        if (typeof data.depositPercentage === "number") setDepositPercentage(data.depositPercentage);
       })
       .catch(() => undefined);
     return () => document.body.classList.remove("cash-disabled");
@@ -853,7 +855,7 @@ export default function BookingFlow() {
                       onClick={() => setPaymentOption("deposit")}
                     >
                       <span>
-                        <b>Sinal de 50%</b>
+                        <b>Sinal de {depositPercentage}%</b>
                         <small>O restante é pago nos atendimentos</small>
                       </span>
                       <strong>R$ {deposit.toFixed(2).replace(".", ",")}</strong>

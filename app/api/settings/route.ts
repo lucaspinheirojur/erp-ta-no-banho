@@ -4,6 +4,7 @@ import { getManager } from "../../../lib/auth";
 import {
   CASH_KEY,
   DEPOSIT_KEY,
+  DEPOSIT_PERCENT_KEY,
   getBookingSettings,
   setBookingMode,
   type BookingMode,
@@ -33,9 +34,10 @@ export async function PATCH(request: Request) {
     const body = (await request.json()) as {
       cashEnabled?: boolean;
       depositEnabled?: boolean;
+      depositPercentage?: number;
       bookingMode?: BookingMode;
     };
-    if (body.cashEnabled === undefined && body.depositEnabled === undefined && !body.bookingMode)
+    if (body.cashEnabled === undefined && body.depositEnabled === undefined && body.depositPercentage === undefined && !body.bookingMode)
       return Response.json({ error: "Configuração inválida" }, { status: 400 });
     if (
       body.bookingMode &&
@@ -86,6 +88,15 @@ export async function PATCH(request: Request) {
           target: [services.organizationId, services.name],
           set: { active: body.depositEnabled, updatedAt: new Date().toISOString() },
         });
+    if (body.depositPercentage !== undefined) {
+      const percentage = Math.round(Number(body.depositPercentage));
+      if (!Number.isFinite(percentage) || percentage < 1 || percentage > 100)
+        return Response.json({ error: "Informe um percentual entre 1% e 100%" }, { status: 400 });
+      await getDb()
+        .insert(services)
+        .values({ organizationId: manager.organizationId, name: DEPOSIT_PERCENT_KEY, groupName: "Sistema", category: "config", detail: String(percentage), duration: "0", priceCents: 0, sessions: 1, active: true, updatedAt: new Date().toISOString() })
+        .onConflictDoUpdate({ target: [services.organizationId, services.name], set: { detail: String(percentage), active: true, updatedAt: new Date().toISOString() } });
+    }
     if (body.bookingMode)
       await setBookingMode(manager.organizationId, body.bookingMode);
     return Response.json(await getBookingSettings(manager.organizationId));

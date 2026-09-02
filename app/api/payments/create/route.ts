@@ -181,7 +181,7 @@ export async function POST(request: Request) {
     }
     const totalCents = Math.round(selectedService.price * 100);
     const amountCents =
-      paymentOption === "full" ? totalCents : Math.round(totalCents * 0.5);
+      paymentOption === "full" ? totalCents : Math.round(totalCents * (settings.depositPercentage / 100));
     const ref = crypto.randomUUID(),
       origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
     if (!cash && !HANDLE)
@@ -291,7 +291,7 @@ export async function POST(request: Request) {
         customer: { name, phone_number: `+55${normalizedPhone}` },
         items: [
           {
-            description: `${paymentOption === "full" ? "Pagamento integral" : "Sinal de 50%"} - ${service} - ${petName}`,
+            description: `${paymentOption === "full" ? "Pagamento integral" : `Sinal de ${settings.depositPercentage}%`} - ${service} - ${petName}`,
             quantity: 1,
             price: amountCents,
           },
