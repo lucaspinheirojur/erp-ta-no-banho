@@ -104,7 +104,7 @@ function GoldenServiceIllustration({ name }: { name: string }) {
   const index = serviceIllustrationPosition(name);
   const column = index % 5;
   const row = Math.floor(index / 5);
-  return <span className="golden-service-illustration" role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row === 0 ? 20 : 80}%` }} />;
+  return <span className={`golden-service-illustration illustration-${index}`} role="img" aria-label={`Golden Retriever representando ${name}`} style={{ backgroundPosition: `${column * 25}% ${row === 0 ? 20 : 80}%` }} />;
 }
 
 function formatToday() {
@@ -559,7 +559,7 @@ export default function Home() {
         {view === "pacotes" && (
           <div className="content"><section className="page-heading compact"><div><p>FIDELIZAÇÃO</p><h1>Pacotes</h1><h2>Organize sessões, validade e benefícios. Preços podem ficar para depois.</h2></div><button className="primary-button" onClick={() => { setEditingPackageId(null); setModal("package"); }}><span>＋</span> Novo pacote</button></section>
             <section className="package-grid">{packages.map((plan) => <article className="package-card" key={plan.id}>
-              <div className="catalog-visual package-visual"><GoldenServiceIllustration name={plan.name}/><span className={plan.active ? "catalog-status active" : "catalog-status"}>{plan.active ? "Disponível" : "Rascunho"}</span></div><h3>{plan.name}</h3><strong className={plan.price === null ? "undefined-price package-price" : "package-price"}>{displayPrice(plan.price)}</strong>
+              <div className="catalog-visual package-visual"><GoldenServiceIllustration name={plan.name}/><span className={plan.active ? "catalog-status active" : "catalog-status"}>{plan.active ? "Disponível" : "Rascunho"}</span></div><small className="package-kicker">Plano de fidelidade</small><h3>{plan.name}</h3><strong className={plan.price === null ? "undefined-price package-price" : "package-price"}>{displayPrice(plan.price)}</strong>
               <div className="package-details"><span><b>{plan.sessions}</b> sessões</span><span><b>{plan.periodicity}</b> periodicidade</span><span><b>{plan.validityDays} dias</b> de validade</span><span><b>{services.find((s) => s.id === plan.serviceId)?.name ?? "Serviço"}</b> incluído</span></div><p>✦ {plan.courtesy}</p>
               <div className="card-actions"><button className="contract-button" disabled={!plan.active} onClick={() => openPackageContract(plan.id)}>Contratar pacote</button><button onClick={() => { setEditingPackageId(plan.id); setModal("package"); }}>Editar</button></div>
             </article>)}</section>
