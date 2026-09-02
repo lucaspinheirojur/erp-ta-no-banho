@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 
-type View = "inicio" | "agenda" | "clientes" | "servicos" | "pacotes" | "financeiro";
+type View = "inicio" | "agenda" | "clientes" | "servicos" | "pacotes" | "financeiro" | "analises";
 
 type Payment = {
   method: "PIX" | "Dinheiro" | "Cartão de débito" | "Cartão de crédito";
@@ -51,6 +51,7 @@ const navItems: { id: View; label: string; icon: string }[] = [
   { id: "servicos", label: "Serviços", icon: "✂" },
   { id: "pacotes", label: "Pacotes", icon: "▦" },
   { id: "financeiro", label: "Financeiro", icon: "$" },
+  { id: "analises", label: "Análises", icon: "⌁" },
 ];
 
 const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
@@ -474,14 +475,6 @@ export default function Home() {
               <article><span className="finance-icon amber">↗</span><div><small>A RECEBER HOJE</small><strong>{formatCurrency(pendingToday)}</strong><p>{todayAppointments.filter((item) => !item.payment).length} atendimentos pendentes</p></div></article>
               <article><span className="finance-icon blue">R$</span><div><small>SALDO OPERACIONAL</small><strong>{formatCurrency(totalReceived + packageReceived-totalExpenses)}</strong><p>{formatCurrency(totalExpenses)} em despesas registradas</p></div></article>
             </section>
-            <section className="panel report-panel">
-              <div className="panel-head"><div><small>RELATÓRIOS</small><h3>Exportar financeiro</h3></div><span className="payment-help">PDF para conferência · Excel para análise</span></div>
-              <div className="report-controls">
-                <div className="report-mode"><button className={reportMode==="month"?"active":""} onClick={()=>setReportMode("month")}>Mês completo</button><button className={reportMode==="custom"?"active":""} onClick={()=>setReportMode("custom")}>Período personalizado</button></div>
-                {reportMode==="month"?<label>Mês<input type="month" value={reportMonth} onChange={event=>setReportMonth(event.target.value)}/></label>:<><label>De<input type="date" value={reportFrom} onChange={event=>setReportFrom(event.target.value)}/></label><label>Até<input type="date" value={reportTo} min={reportFrom} onChange={event=>setReportTo(event.target.value)}/></label></>}
-                <div className="report-downloads"><a href={`/api/finance/report?${reportQuery}&format=pdf`} download>↓ Baixar PDF</a><a href={`/api/finance/report?${reportQuery}&format=xls`} download>↓ Baixar Excel</a></div>
-              </div>
-            </section>
             <section className="panel payments-panel">
               <div className="panel-head"><div><small>ATENDIMENTOS</small><h3>Pagamentos e pendências</h3></div><span className="payment-help">Registre o recebimento na linha do pet</span></div>
               <div className="payment-list">
@@ -506,6 +499,14 @@ export default function Home() {
                 </article>; })}
               </div>
             </section>
+          </div>
+        )}
+
+        {view === "analises" && (
+          <div className="content analytics-page">
+            <section className="page-heading compact"><div><p>INTELIGÊNCIA DO NEGÓCIO</p><h1>Análises</h1><h2>Acompanhe os resultados do Tá no Banho e exporte os relatórios financeiros.</h2></div><button className="secondary-button" onClick={()=>goTo("financeiro")}>Abrir financeiro <span>→</span></button></section>
+            <section className="finance-stats" aria-label="Indicadores analíticos"><article><span className="finance-icon green">R$</span><div><small>RECEITA REGISTRADA</small><strong>{formatCurrency(totalReceived+packageReceived)}</strong><p>Atendimentos e pacotes</p></div></article><article><span className="finance-icon amber">−</span><div><small>DESPESAS</small><strong>{formatCurrency(totalExpenses)}</strong><p>Saídas registradas</p></div></article><article><span className="finance-icon blue">◎</span><div><small>SALDO OPERACIONAL</small><strong>{formatCurrency(totalReceived+packageReceived-totalExpenses)}</strong><p>Receitas menos despesas</p></div></article></section>
+            <section className="panel report-panel"><div className="panel-head"><div><small>CENTRAL DE RELATÓRIOS</small><h3>Exportar dados financeiros</h3></div><span className="payment-help">PDF para conferência · Excel para análise</span></div><div className="report-controls"><div className="report-mode"><button className={reportMode==="month"?"active":""} onClick={()=>setReportMode("month")}>Mês completo</button><button className={reportMode==="custom"?"active":""} onClick={()=>setReportMode("custom")}>Período personalizado</button></div>{reportMode==="month"?<label>Mês<input type="month" value={reportMonth} onChange={event=>setReportMonth(event.target.value)}/></label>:<><label>De<input type="date" value={reportFrom} onChange={event=>setReportFrom(event.target.value)}/></label><label>Até<input type="date" value={reportTo} min={reportFrom} onChange={event=>setReportTo(event.target.value)}/></label></>}<div className="report-downloads"><a href={`/api/finance/report?${reportQuery}&format=pdf`} download>↓ Baixar PDF</a><a href={`/api/finance/report?${reportQuery}&format=xls`} download>↓ Baixar Excel</a></div></div></section>
           </div>
         )}
       </section>
