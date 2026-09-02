@@ -71,7 +71,7 @@ export async function POST(request: Request) {
             : undefined,
         }
       : serviceCatalog.find((item) => item.name === service);
-    const paymentOption = data.paymentOption === "full" ? "full" : "deposit";
+    const paymentOption = !settings.depositEnabled || data.paymentOption === "full" ? "full" : "deposit";
     const cash = data.method === "cash";
     if (cash) {
       if (!settings.cashEnabled)

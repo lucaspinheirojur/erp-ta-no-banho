@@ -3,6 +3,7 @@ import { services } from "../../../db/schema";
 import { getManager } from "../../../lib/auth";
 import {
   CASH_KEY,
+  DEPOSIT_KEY,
   getBookingSettings,
   setBookingMode,
   type BookingMode,
@@ -31,9 +32,10 @@ export async function PATCH(request: Request) {
   try {
     const body = (await request.json()) as {
       cashEnabled?: boolean;
+      depositEnabled?: boolean;
       bookingMode?: BookingMode;
     };
-    if (body.cashEnabled === undefined && !body.bookingMode)
+    if (body.cashEnabled === undefined && body.depositEnabled === undefined && !body.bookingMode)
       return Response.json({ error: "Configuração inválida" }, { status: 400 });
     if (
       body.bookingMode &&
@@ -64,6 +66,25 @@ export async function PATCH(request: Request) {
             active: body.cashEnabled,
             updatedAt: new Date().toISOString(),
           },
+        });
+    if (typeof body.depositEnabled === "boolean")
+      await getDb()
+        .insert(services)
+        .values({
+          organizationId: manager.organizationId,
+          name: DEPOSIT_KEY,
+          groupName: "Sistema",
+          category: "config",
+          detail: "Controla a cobrança de sinal no agendamento on-line",
+          duration: "0",
+          priceCents: 0,
+          sessions: 1,
+          active: body.depositEnabled,
+          updatedAt: new Date().toISOString(),
+        })
+        .onConflictDoUpdate({
+          target: [services.organizationId, services.name],
+          set: { active: body.depositEnabled, updatedAt: new Date().toISOString() },
         });
     if (body.bookingMode)
       await setBookingMode(manager.organizationId, body.bookingMode);

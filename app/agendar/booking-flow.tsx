@@ -169,6 +169,7 @@ export default function BookingFlow() {
   const [done, setDone] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [, setCashEnabled] = useState(true);
+  const [depositEnabled, setDepositEnabled] = useState(true);
   const [bookingNow] = useState(() => Date.now());
   const [bookingReference, setBookingReference] = useState("");
   const [acceptedRules, setAcceptedRules] = useState(false);
@@ -243,12 +244,16 @@ export default function BookingFlow() {
   useEffect(() => {
     fetch("/api/settings")
       .then((response) => response.json())
-      .then((data: { cashEnabled?: boolean }) => {
+      .then((data: { cashEnabled?: boolean; depositEnabled?: boolean }) => {
         if (typeof data.cashEnabled === "boolean") {
           setCashEnabled(data.cashEnabled);
           document.body.classList.toggle("cash-disabled", !data.cashEnabled);
           if (!data.cashEnabled)
             setMethod((current) => (current === "cash" ? "pix" : current));
+        }
+        if (typeof data.depositEnabled === "boolean") {
+          setDepositEnabled(data.depositEnabled);
+          if (!data.depositEnabled) setPaymentOption("full");
         }
       })
       .catch(() => undefined);
@@ -843,7 +848,7 @@ export default function BookingFlow() {
                 <>
                   <p className="payment-label">VALOR DO PAGAMENTO</p>
                   <div className="amount-choices">
-                    <button
+                    {depositEnabled && <button
                       className={paymentOption === "deposit" ? "selected" : ""}
                       onClick={() => setPaymentOption("deposit")}
                     >
@@ -852,7 +857,7 @@ export default function BookingFlow() {
                         <small>O restante é pago nos atendimentos</small>
                       </span>
                       <strong>R$ {deposit.toFixed(2).replace(".", ",")}</strong>
-                    </button>
+                    </button>}
                     <button
                       className={paymentOption === "full" ? "selected" : ""}
                       onClick={() => setPaymentOption("full")}

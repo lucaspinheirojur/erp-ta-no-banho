@@ -5,11 +5,13 @@ import { services } from "../db/schema";
 export type BookingMode = "open" | "paused" | "management_only";
 
 export const CASH_KEY = "__CONFIG_CASH_ENABLED__";
+export const DEPOSIT_KEY = "__CONFIG_DEPOSIT_ENABLED__";
 export const BOOKING_ENABLED_KEY = "__CONFIG_BOOKING_ENABLED__";
 export const BOOKING_VISIBLE_KEY = "__CONFIG_BOOKING_VISIBLE__";
 
 const CONFIGS: Record<string, string> = {
   [CASH_KEY]: "Controla o pagamento presencial",
+  [DEPOSIT_KEY]: "Controla a cobrança de sinal no agendamento on-line",
   [BOOKING_ENABLED_KEY]: "Controla a criação de agendamentos públicos",
   [BOOKING_VISIBLE_KEY]: "Controla a visibilidade do agendamento público",
 };
@@ -28,7 +30,7 @@ export async function getBookingSettings(organizationId = "ta-no-banho") {
   const bookingEnabled = enabled(BOOKING_ENABLED_KEY);
   const bookingVisible = enabled(BOOKING_VISIBLE_KEY);
   const bookingMode: BookingMode = bookingEnabled ? "open" : bookingVisible ? "paused" : "management_only";
-  return { cashEnabled: enabled(CASH_KEY), bookingMode };
+  return { cashEnabled: enabled(CASH_KEY), depositEnabled: enabled(DEPOSIT_KEY), bookingMode };
 }
 
 export async function setBookingMode(organizationId: string, mode: BookingMode) {

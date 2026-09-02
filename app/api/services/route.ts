@@ -5,7 +5,6 @@ import { serviceCatalog, type BookingCategory, type PackageVisit } from "../../s
 import { getManager } from "../../../lib/auth";
 
 const ORGANIZATION_ID = "ta-no-banho";
-const CASH_SETTING_NAME = "__CONFIG_CASH_ENABLED__";
 function serialize(row: typeof services.$inferSelect) { return { id: row.id, name: row.name, group: row.groupName, category: row.category as BookingCategory, detail: row.detail, duration: row.duration, price: row.priceCents / 100, sessions: row.sessions, visits: row.visitsJson ? JSON.parse(row.visitsJson) as PackageVisit[] : undefined, active: row.active }; }
 
 async function syncOfficialCatalog(organizationId = ORGANIZATION_ID) {
@@ -21,7 +20,7 @@ async function syncOfficialCatalog(organizationId = ORGANIZATION_ID) {
 }
 
 export async function GET(request: Request) {
-  try { const account = await getManager(); const management = new URL(request.url).searchParams.get("management") === "1" && !!account; const organizationId = account?.organizationId ?? ORGANIZATION_ID; await syncOfficialCatalog(organizationId); const rows = await getDb().select().from(services).where(management ? and(eq(services.organizationId, organizationId), ne(services.name, CASH_SETTING_NAME)) : and(eq(services.organizationId, organizationId), eq(services.active, true), ne(services.name, CASH_SETTING_NAME))).orderBy(asc(services.category), asc(services.groupName), asc(services.id)); return Response.json({ services: rows.map(serialize) }); }
+  try { const account = await getManager(); const management = new URL(request.url).searchParams.get("management") === "1" && !!account; const organizationId = account?.organizationId ?? ORGANIZATION_ID; await syncOfficialCatalog(organizationId); const rows = await getDb().select().from(services).where(management ? and(eq(services.organizationId, organizationId), ne(services.category, "config")) : and(eq(services.organizationId, organizationId), eq(services.active, true), ne(services.category, "config"))).orderBy(asc(services.category), asc(services.groupName), asc(services.id)); return Response.json({ services: rows.map(serialize) }); }
   catch (error) { return Response.json({ error: error instanceof Error ? error.message : "Não foi possível carregar os serviços" }, { status: 500 }); }
 }
 
